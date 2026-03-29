@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Game Studios</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;overflow:hidden;font-family:'Segoe UI',sans-serif;color:#fff}
+canvas{display:block;cursor:default}
+#ui-overlay{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:10}
+#title-bar{
+  text-align:center;padding:12px;
+  background:linear-gradient(180deg,rgba(10,10,30,0.95) 0%,rgba(10,10,30,0) 100%);
+  pointer-events:auto;
+}
+#title-bar h1{
+  font-size:22px;font-weight:700;letter-spacing:2px;
+  background:linear-gradient(90deg,#58a6ff,#bc8cff,#f778ba);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:0 0 30px rgba(88,166,255,0.3);
+}
+#title-bar .sub{font-size:12px;color:#8b949e;margin-top:2px}
+#stats-hud{
+  position:fixed;top:60px;left:16px;pointer-events:auto;z-index:10;
+  display:flex;flex-direction:column;gap:6px;
+}
+.hud-item{
+  background:rgba(22,27,34,0.9);border:1px solid #30363d;border-radius:8px;
+  padding:8px 14px;font-size:12px;backdrop-filter:blur(10px);
+  display:flex;align-items:center;gap:8px;
+}
+.hud-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+#minimap{
+  position:fixed;bottom:16px;right:16px;width:180px;height:130px;
+  background:rgba(22,27,34,0.9);border:1px solid #30363d;border-radius:8px;
+  pointer-events:auto;z-index:10;overflow:hidden;
+}
+#minimap canvas{width:100%;height:100%}
+#minimap-label{
+  position:absolute;top:4px;left:8px;font-size:9px;color:#58a6ff;
+  text-transform:uppercase;letter-spacing:1px;
+}
+#agent-panel{
+  position:fixed;bottom:16px;left:16px;right:210px;
+  pointer-events:auto;z-index:10;
+  background:rgba(13,17,23,0.95);border:1px solid #30363d;border-radius:12px;
+  padding:16px 20px;backdrop-filter:blur(20px);
+  transform:translateY(120%);transition:transform 0.3s ease;
+  max-height:240px;overflow-y:auto;
+}
+#agent-panel.visible{transform:translateY(0)}
+#agent-panel .panel-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+#agent-panel .panel-name{font-size:18px;font-weight:700}
+#agent-panel .panel-model{
+  font-size:11px;padding:3px 8px;border-radius:10px;font-weight:600;text-transform:uppercase;
+}
+.model-opus{background:rgba(188,140,255,0.2);color:#bc8cff}
+.model-sonnet{background:rgba(88,166,255,0.2);color:#58a6ff}
+.model-haiku{background:rgba(63,185,80,0.2);color:#3fb950}
+#agent-panel .panel-tier{font-size:11px;color:#8b949e}
+#agent-panel .panel-desc{font-size:13px;color:#c9d1d9;line-height:1.5;margin-bottom:8px}
+#agent-panel .panel-tools{font-size:11px;color:#8b949e}
+#agent-panel .panel-close{
+  position:absolute;top:12px;right:16px;cursor:pointer;
+  color:#8b949e;font-size:18px;pointer-events:auto;
+}
+#agent-panel .panel-close:hover{color:#fff}
+#room-label{
+  position:fixed;top:60px;right:16px;
+  pointer-events:none;z-index:10;text-align:right;
+}
+#room-label .label{
+  font-size:14px;font-weight:600;color:#58a6ff;
+  text-shadow:0 0 20px rgba(88,166,255,0.5);
+  opacity:0;transition:opacity 0.3s;
+}
+#room-label .label.visible{opacity:1}
+#instructions{
+  position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  pointer-events:none;z-index:10;
+  font-size:11px;color:#484f58;text-align:center;
+  transition:opacity 0.5s;
+}
+#loading-screen{
+  position:fixed;inset:0;z-index:100;
+  background:#0d1117;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  transition:opacity 0.8s;
+}
+#loading-screen.hide{opacity:0;pointer-events:none}
+#loading-screen h2{
+  font-size:24px;margin-bottom:8px;
+  background:linear-gradient(90deg,#58a6ff,#bc8cff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+#loading-screen .bar{width:200px;height:3px;background:#21262d;border-radius:2px;overflow:hidden}
+#loading-screen .bar-fill{height:100%;background:linear-gradient(90deg,#58a6ff,#bc8cff);width:0%;transition:width 0.3s}
+#loading-screen .load-text{font-size:11px;color:#484f58;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="loading-screen">
+  <h2>CLAUDE CODE GAME STUDIOS</h2>
+  <div class="bar"><div class="bar-fill" id="load-bar"></div></div>
+  <div class="load-text" id="load-text">Initializing studio...</div>
+</div>
+<div id="ui-overlay">
+  <div id="title-bar">
+    <h1>CLAUDE CODE GAME STUDIOS</h1>
+    <div class="sub">48 Agents &middot; 37 Workflows &middot; Isometric Studio View</div>
+  </div>
+</div>
+<div id="stats-hud"></div>
+<div id="room-label"><div class="label" id="room-label-text"></div></div>
+<div id="agent-panel">
+  <div class="panel-close" onclick="closePanel()">&times;</div>
+  <div class="panel-header">
+    <div class="panel-name" id="p-name"></div>
+    <div class="panel-model" id="p-model"></div>
+    <div class="panel-tier" id="p-tier"></div>
+  </div>
+  <div class="panel-desc" id="p-desc"></div>
+  <div class="panel-tools" id="p-tools"></div>
+</div>
+<div id="minimap"><div id="minimap-label">MAP</div><canvas id="minimap-canvas"></canvas></div>
+<div id="instructions">WASD / Arrow Keys to move &middot; Click agent to inspect &middot; Scroll to zoom</div>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const mmCanvas = document.getElementById('minimap-canvas');
+const mmCtx = mmCanvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  mmCanvas.width = 180; mmCanvas.height = 130;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Camera
+const cam = { x: 0, y: 0, zoom: 1, targetX: 0, targetY: 0, targetZoom: 1 };
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+canvas.addEventListener('wheel', e => {
+  cam.targetZoom = Math.max(0.4, Math.min(2.5, cam.targetZoom - e.deltaY * 0.001));
+  e.preventDefault();
+}, { passive: false });
+
+// Isometric helpers
+function toIso(x, y) {
+  return { x: (x - y) * 0.866, y: (x + y) * 0.5 };
+}
+function toScreen(ix, iy) {
+  return { x: ix * cam.zoom + W/2 - cam.x * cam.zoom, y: iy * cam.zoom + H/2 - cam.y * cam.zoom };
+}
+function toWorld(sx, sy) {
+  return { x: (sx - W/2) / cam.zoom + cam.x, y: (sy - H/2) / cam.zoom + cam.y };
+}
+
+// ====== ROOMS ======
+const ROOM_W = 200, ROOM_H = 150;
+const rooms = [
+  { id: 'directors', name: 'Directors Office', color: '#bc8cff', gx: 0, gy: 0, icon: '\u{1F3AC}' },
+  { id: 'design', name: 'Design Department', color: '#58a6ff', gx: 1, gy: 0, icon: '\u{1F3AE}' },
+  { id: 'programming', name: 'Programming Lab', color: '#3fb950', gx: 2, gy: 0, icon: '\u{1F4BB}' },
+  { id: 'art', name: 'Art Studio', color: '#f778ba', gx: 0, gy: 1, icon: '\u{1F3A8}' },
+  { id: 'audio', name: 'Audio Room', color: '#d29922', gx: 1, gy: 1, icon: '\u{1F3B5}' },
+  { id: 'narrative', name: 'Narrative Workshop', color: '#f0883e', gx: 2, gy: 1, icon: '\u{1F4DD}' },
+  { id: 'qa', name: 'QA & Testing', color: '#f85149', gx: 0, gy: 2, icon: '\u{1F41B}' },
+  { id: 'production', name: 'Production Hub', color: '#39d353', gx: 1, gy: 2, icon: '\u{1F4CA}' },
+  { id: 'engine', name: 'Engine Specialists', color: '#79c0ff', gx: 2, gy: 2, icon: '\u{2699}\u{FE0F}' },
+];
+
+rooms.forEach(r => {
+  const spacing = 240;
+  const ox = -spacing, oy = -spacing;
+  r.wx = ox + r.gx * spacing;
+  r.wy = oy + r.gy * spacing;
+  const iso = toIso(r.wx, r.wy);
+  r.ix = iso.x;
+  r.iy = iso.y;
+});
+
+// ====== AGENTS ======
+const agentRoomMap = {
+  directors: ['creative-director','technical-director','producer'],
+  design: ['game-designer','systems-designer','level-designer','economy-designer','ux-designer','prototyper'],
+  programming: ['lead-programmer','gameplay-programmer','engine-programmer','ai-programmer','network-programmer','tools-programmer','ui-programmer'],
+  art: ['art-director','technical-artist'],
+  audio: ['audio-director','sound-designer'],
+  narrative: ['narrative-director','writer','world-builder'],
+  qa: ['qa-lead','qa-tester','performance-analyst','security-engineer','accessibility-specialist'],
+  production: ['release-manager','devops-engineer','analytics-engineer','localization-lead','live-ops-designer','community-manager'],
+  engine: ['godot-specialist','godot-gdscript-specialist','godot-shader-specialist','godot-gdextension-specialist','unity-specialist','unity-dots-specialist','unity-shader-specialist','unity-addressables-specialist','unity-ui-specialist','unreal-specialist','ue-gas-specialist','ue-blueprint-specialist','ue-replication-specialist','ue-umg-specialist'],
+};
+
+let agents = [];
+let agentData = {};
+let selectedAgent = null;
+let hoveredAgent = null;
+let time = 0;
+let loaded = false;
+
+// Load agent data from API
+async function loadAgentData() {
+  setLoad(20, 'Loading agents...');
+  try {
+    const res = await fetch('/api/agents');
+    const data = await res.json();
+    data.forEach(a => agentData[a.id] = a);
+  } catch(e) {
+    console.warn('API not available, using local data');
+  }
+  setLoad(60, 'Building studio...');
+  buildAgents();
+  setLoad(90, 'Placing furniture...');
+  setTimeout(() => {
+    setLoad(100, 'Welcome to the studio!');
+    setTimeout(() => {
+      document.getElementById('loading-screen').classList.add('hide');
+      loaded = true;
+    }, 400);
+  }, 300);
+}
+
+function setLoad(pct, text) {
+  document.getElementById('load-bar').style.width = pct + '%';
+  document.getElementById('load-text').textContent = text;
+}
+
+function buildAgents() {
+  agents = [];
+  for (const [roomId, agentIds] of Object.entries(agentRoomMap)) {
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) continue;
+    const count = agentIds.length;
+    const cols = Math.ceil(Math.sqrt(count));
+    agentIds.forEach((id, i) => {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const totalRows = Math.ceil(count / cols);
+      const colsInRow = (row === totalRows - 1 && count % cols !== 0) ? count % cols : cols;
+      const sx = (col - (colsInRow - 1) / 2) * 38;
+      const sy = (row - (totalRows - 1) / 2) * 38;
+      const wx = room.wx + sx * 0.5;
+      const wy = room.wy + sy * 0.5;
+      const iso = toIso(wx, wy);
+      const info = agentData[id] || {};
+      agents.push({
+        id,
+        name: info.name || id,
+        model: info.model || 'sonnet',
+        description: info.description || '',
+        tools: info.tools || '',
+        tier: info.tier || 3,
+        roomId,
+        wx, wy,
+        ix: iso.x, iy: iso.y,
+        bobOffset: Math.random() * Math.PI * 2,
+        walkPhase: Math.random() * Math.PI * 2,
+        walkRadius: 3 + Math.random() * 5,
+        walkSpeed: 0.2 + Math.random() * 0.3,
+        sparkle: Math.random() * Math.PI * 2,
+      });
+    });
+  }
+  // Center camera
+  cam.x = 0; cam.y = 50;
+  cam.targetX = 0; cam.targetY = 50;
+  cam.targetZoom = 0.9; cam.zoom = 0.9;
+  buildHUD();
+}
+
+function buildHUD() {
+  const hud = document.getElementById('stats-hud');
+  hud.innerHTML = rooms.map(r => {
+    const count = (agentRoomMap[r.id] || []).length;
+    return `<div class="hud-item" onclick="panToRoom('${r.id}')" style="cursor:pointer">
+      <div class="hud-dot" style="background:${r.color}"></div>
+      <span>${r.icon} ${r.name}</span>
+      <span style="margin-left:auto;color:${r.color};font-weight:600">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function panToRoom(roomId) {
+  const room = rooms.find(r => r.id === roomId);
+  if (!room) return;
+  cam.targetX = room.ix;
+  cam.targetY = room.iy + 30;
+  cam.targetZoom = 1.5;
+}
+
+// ====== DRAWING ======
+function drawIsoDiamond(cx, cy, w, h, fill, stroke, lineW) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - h/2);
+  ctx.lineTo(cx + w/2, cy);
+  ctx.lineTo(cx, cy + h/2);
+  ctx.lineTo(cx - w/2, cy);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineW || 1; ctx.stroke(); }
+}
+
+function drawRoom(room) {
+  const s = toScreen(room.ix, room.iy);
+  const rw = ROOM_W * cam.zoom;
+  const rh = ROOM_H * cam.zoom * 0.58;
+
+  // Floor
+  const floorAlpha = 0.12;
+  drawIsoDiamond(s.x, s.y, rw, rh, `${room.color}${Math.round(floorAlpha*255).toString(16).padStart(2,'0')}`, room.color + '40', 1.5 * cam.zoom);
+
+  // Grid lines on floor
+  ctx.globalAlpha = 0.06;
+  const gridN = 5;
+  for (let i = 1; i < gridN; i++) {
+    const t = i / gridN;
+    const lx = s.x - rw/2 * (1 - t) + rw/2 * t;
+    const ly = s.y - rh/2 * t + rh/2 * (1-t);  // Hmm, simpler approach
+    // Just draw subtle lines
+  }
+  ctx.globalAlpha = 1;
+
+  // Room label
+  ctx.font = `${11 * cam.zoom}px 'Segoe UI', sans-serif`;
+  ctx.fillStyle = room.color;
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = 0.7;
+  ctx.fillText(room.icon + ' ' + room.name, s.x, s.y - rh/2 - 6 * cam.zoom);
+  ctx.globalAlpha = 1;
+}
+
+function getAgentColor(model) {
+  if (model === 'opus') return '#bc8cff';
+  if (model === 'haiku') return '#3fb950';
+  return '#58a6ff';
+}
+
+function drawAgent(agent, t) {
+  // Walking animation
+  const wx = Math.sin(t * agent.walkSpeed + agent.walkPhase) * agent.walkRadius;
+  const wy = Math.cos(t * agent.walkSpeed * 0.7 + agent.walkPhase) * agent.walkRadius * 0.6;
+  const aiso = toIso(agent.wx + wx, agent.wy + wy);
+  const s = toScreen(aiso.x, aiso.y);
+  const bob = Math.sin(t * 3 + agent.bobOffset) * 2 * cam.zoom;
+  const color = getAgentColor(agent.model);
+  const isSelected = selectedAgent === agent;
+  const isHovered = hoveredAgent === agent;
+  const scale = cam.zoom * (isSelected ? 1.2 : isHovered ? 1.1 : 1);
+
+  // Shadow
+  ctx.beginPath();
+  ctx.ellipse(s.x, s.y + 14 * scale, 8 * scale, 4 * scale, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fill();
+
+  const py = s.y + bob;
+
+  // Body (pill shape)
+  ctx.beginPath();
+  ctx.ellipse(s.x, py, 7 * scale, 10 * scale, 0, 0, Math.PI * 2);
+  ctx.fillStyle = color + (isSelected ? 'ff' : 'cc');
+  ctx.fill();
+  if (isSelected || isHovered) {
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Head
+  ctx.beginPath();
+  ctx.arc(s.x, py - 10 * scale, 5 * scale, 0, Math.PI * 2);
+  ctx.fillStyle = '#e6edf3';
+  ctx.fill();
+
+  // Eyes
+  const eyeY = py - 10.5 * scale;
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(s.x - 3 * scale, eyeY - 1 * scale, 1.5 * scale, 1.5 * scale);
+  ctx.fillRect(s.x + 1.5 * scale, eyeY - 1 * scale, 1.5 * scale, 1.5 * scale);
+
+  // Tier crown for directors
+  if (agent.tier === 1) {
+    const crY = py - 16 * scale;
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.moveTo(s.x - 4*scale, crY + 3*scale);
+    ctx.lineTo(s.x - 4*scale, crY);
+    ctx.lineTo(s.x - 2*scale, crY + 2*scale);
+    ctx.lineTo(s.x, crY - 1*scale);
+    ctx.lineTo(s.x + 2*scale, crY + 2*scale);
+    ctx.lineTo(s.x + 4*scale, crY);
+    ctx.lineTo(s.x + 4*scale, crY + 3*scale);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Sparkle for selected
+  if (isSelected) {
+    const sparkAngle = t * 2 + agent.sparkle;
+    for (let i = 0; i < 4; i++) {
+      const a = sparkAngle + i * Math.PI / 2;
+      const dist = 18 * scale + Math.sin(t * 5 + i) * 3 * scale;
+      const sx2 = s.x + Math.cos(a) * dist;
+      const sy2 = py + Math.sin(a) * dist;
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.5 + Math.sin(t * 4 + i) * 0.3;
+      ctx.beginPath();
+      ctx.arc(sx2, sy2, 1.5 * scale, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Name label
+  if (isSelected || isHovered || cam.zoom > 1.2) {
+    ctx.font = `bold ${9 * cam.zoom}px 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = isSelected ? '#fff' : '#c9d1d9';
+    ctx.fillText(agent.name, s.x, py + 20 * scale);
+  }
+
+  // Store screen pos for hit detection
+  agent.sx = s.x;
+  agent.sy = py;
+  agent.sRadius = 12 * scale;
+}
+
+// Particles
+const particles = [];
+function spawnParticles() {
+  if (particles.length > 80) return;
+  const room = rooms[Math.floor(Math.random() * rooms.length)];
+  const ox = (Math.random() - 0.5) * 80;
+  const oy = (Math.random() - 0.5) * 80;
+  const iso = toIso(room.wx + ox, room.wy + oy);
+  particles.push({
+    ix: iso.x, iy: iso.y,
+    life: 1, decay: 0.003 + Math.random() * 0.005,
+    color: room.color, size: 1 + Math.random() * 2,
+    vy: -0.2 - Math.random() * 0.3
+  });
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.iy += p.vy;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const s = toScreen(p.ix, p.iy);
+    ctx.globalAlpha = p.life * 0.5;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, p.size * cam.zoom, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Connection lines between rooms
+function drawConnections() {
+  ctx.globalAlpha = 0.08;
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 1;
+  const pairs = [[0,1],[1,2],[0,3],[1,4],[2,5],[3,6],[4,7],[5,8],[3,4],[4,5],[6,7],[7,8]];
+  for (const [a, b] of pairs) {
+    const sa = toScreen(rooms[a].ix, rooms[a].iy);
+    const sb = toScreen(rooms[b].ix, rooms[b].iy);
+    ctx.beginPath();
+    ctx.setLineDash([4, 8]);
+    ctx.moveTo(sa.x, sa.y);
+    ctx.lineTo(sb.x, sb.y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+}
+
+// Star background
+const stars = Array.from({length: 120}, () => ({
+  x: Math.random() * 3000 - 1500,
+  y: Math.random() * 2000 - 1000,
+  size: Math.random() * 1.5 + 0.3,
+  twinkle: Math.random() * Math.PI * 2,
+}));
+
+function drawStars(t) {
+  ctx.globalAlpha = 0.3;
+  for (const star of stars) {
+    const sx = star.x * 0.3 + W/2 - cam.x * 0.1;
+    const sy = star.y * 0.3 + H/2 - cam.y * 0.1;
+    const alpha = 0.3 + Math.sin(t * 0.5 + star.twinkle) * 0.2;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(sx, sy, star.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Minimap
+function drawMinimap() {
+  mmCtx.fillStyle = '#0d1117';
+  mmCtx.fillRect(0, 0, 180, 130);
+
+  const scale = 0.18;
+  const ox = 90, oy = 55;
+  for (const room of rooms) {
+    const rx = room.ix * scale + ox;
+    const ry = room.iy * scale + oy;
+    mmCtx.fillStyle = room.color + '60';
+    mmCtx.beginPath();
+    mmCtx.moveTo(rx, ry - 8);
+    mmCtx.lineTo(rx + 14, ry);
+    mmCtx.lineTo(rx, ry + 8);
+    mmCtx.lineTo(rx - 14, ry);
+    mmCtx.closePath();
+    mmCtx.fill();
+  }
+
+  // Agents as tiny dots
+  for (const agent of agents) {
+    const ax = agent.ix * scale + ox;
+    const ay = agent.iy * scale + oy;
+    mmCtx.fillStyle = getAgentColor(agent.model);
+    mmCtx.fillRect(ax - 1, ay - 1, 2, 2);
+  }
+
+  // Camera viewport
+  const vl = (-W/2/cam.zoom + cam.x) * scale + ox;
+  const vt = (-H/2/cam.zoom + cam.y) * scale + oy;
+  const vw = (W / cam.zoom) * scale;
+  const vh = (H / cam.zoom) * scale;
+  mmCtx.strokeStyle = '#fff';
+  mmCtx.lineWidth = 1;
+  mmCtx.strokeRect(vl, vt, vw, vh);
+}
+
+// Hit test
+function getAgentAtScreen(sx, sy) {
+  for (let i = agents.length - 1; i >= 0; i--) {
+    const a = agents[i];
+    if (a.sx === undefined) continue;
+    const dx = sx - a.sx, dy = sy - a.sy;
+    if (dx * dx + dy * dy < a.sRadius * a.sRadius) return a;
+  }
+  return null;
+}
+
+// Room hover detect
+function getRoomAtScreen(sx, sy) {
+  const w = toWorld(sx, sy);
+  // reverse iso: wx ≈ (ix/0.866 + iy/0.5)/2, wy ≈ (iy/0.5 - ix/0.866)/2
+  // Actually, find nearest room
+  let best = null, bestD = Infinity;
+  for (const r of rooms) {
+    const rs = toScreen(r.ix, r.iy);
+    const dx = sx - rs.x, dy = sy - rs.y;
+    const d = dx*dx + dy*dy;
+    const maxR = (ROOM_W * cam.zoom / 2) * (ROOM_W * cam.zoom / 2);
+    if (d < maxR && d < bestD) { best = r; bestD = d; }
+  }
+  return best;
+}
+
+canvas.addEventListener('click', e => {
+  const agent = getAgentAtScreen(e.clientX, e.clientY);
+  if (agent) {
+    selectedAgent = agent;
+    showPanel(agent);
+  } else {
+    selectedAgent = null;
+    closePanel();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  hoveredAgent = getAgentAtScreen(e.clientX, e.clientY);
+  canvas.style.cursor = hoveredAgent ? 'pointer' : 'default';
+  const room = getRoomAtScreen(e.clientX, e.clientY);
+  const label = document.getElementById('room-label-text');
+  if (room) {
+    label.textContent = room.icon + ' ' + room.name;
+    label.classList.add('visible');
+  } else {
+    label.classList.remove('visible');
+  }
+});
+
+function showPanel(agent) {
+  const panel = document.getElementById('agent-panel');
+  document.getElementById('p-name').textContent = agent.name;
+  const pm = document.getElementById('p-model');
+  pm.textContent = agent.model;
+  pm.className = 'panel-model model-' + agent.model;
+  const tierNames = { 1: 'Tier 1 - Director', 2: 'Tier 2 - Department Lead', 3: 'Tier 3 - Specialist' };
+  document.getElementById('p-tier').textContent = tierNames[agent.tier] || 'Specialist';
+  document.getElementById('p-desc').textContent = agent.description;
+  document.getElementById('p-tools').textContent = agent.tools ? 'Tools: ' + agent.tools : '';
+  panel.classList.add('visible');
+  document.getElementById('instructions').style.opacity = '0';
+}
+
+function closePanel() {
+  document.getElementById('agent-panel').classList.remove('visible');
+  document.getElementById('instructions').style.opacity = '1';
+  selectedAgent = null;
+}
+
+// ====== MAIN LOOP ======
+function update() {
+  time += 0.016;
+
+  // Camera movement
+  const spd = 5 / cam.zoom;
+  if (keys['w'] || keys['arrowup']) cam.targetY -= spd;
+  if (keys['s'] || keys['arrowdown']) cam.targetY += spd;
+  if (keys['a'] || keys['arrowleft']) cam.targetX -= spd;
+  if (keys['d'] || keys['arrowright']) cam.targetX += spd;
+
+  cam.x += (cam.targetX - cam.x) * 0.1;
+  cam.y += (cam.targetY - cam.y) * 0.1;
+  cam.zoom += (cam.targetZoom - cam.zoom) * 0.1;
+
+  if (Math.random() < 0.3) spawnParticles();
+  updateParticles();
+}
+
+function draw() {
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  // Background gradient
+  const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W * 0.7);
+  grad.addColorStop(0, '#161b22');
+  grad.addColorStop(1, '#0d1117');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars(time);
+  drawConnections();
+
+  // Draw rooms
+  for (const room of rooms) drawRoom(room);
+
+  drawParticles();
+
+  // Sort agents by iy for depth
+  const sorted = [...agents].sort((a, b) => a.iy - b.iy);
+  for (const agent of sorted) drawAgent(agent, time);
+
+  drawMinimap();
+}
+
+function loop() {
+  if (loaded) {
+    update();
+    draw();
+  }
+  requestAnimationFrame(loop);
+}
+
+// Drag support
+let dragging = false, dragStart = { x: 0, y: 0 };
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 0 && !getAgentAtScreen(e.clientX, e.clientY)) {
+    dragging = true;
+    dragStart = { x: e.clientX, y: e.clientY, cx: cam.targetX, cy: cam.targetY };
+  }
+});
+canvas.addEventListener('mousemove', e => {
+  if (dragging) {
+    cam.targetX = dragStart.cx - (e.clientX - dragStart.x) / cam.zoom;
+    cam.targetY = dragStart.cy - (e.clientY - dragStart.y) / cam.zoom;
+  }
+});
+canvas.addEventListener('mouseup', () => dragging = false);
+canvas.addEventListener('mouseleave', () => dragging = false);
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  dragging = true;
+  dragStart = { x: t.clientX, y: t.clientY, cx: cam.targetX, cy: cam.targetY };
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  if (dragging && e.touches.length === 1) {
+    const t = e.touches[0];
+    cam.targetX = dragStart.cx - (t.clientX - dragStart.x) / cam.zoom;
+    cam.targetY = dragStart.cy - (t.clientY - dragStart.y) / cam.zoom;
+  }
+}, { passive: true });
+canvas.addEventListener('touchend', () => dragging = false);
+
+loadAgentData();
+loop();
+</script>
+</body>
+</html>

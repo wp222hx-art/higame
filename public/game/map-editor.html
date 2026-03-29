@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SYNAPSE-beta — 2.5D 等距地图编辑器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#080c18;font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;color:#e0e6ed}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(0,230,118,.15);border-radius:3px}
+
+.app{display:flex;height:100vh;flex-direction:column}
+.top-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(6,10,22,.98);border-bottom:1px solid rgba(0,230,118,.08);flex-shrink:0;z-index:100}
+.top-header h1{font-size:15px;font-weight:900;letter-spacing:2px;display:flex;align-items:center;gap:8px}
+.top-header h1 span{background:linear-gradient(135deg,#00e676,#69f0ae);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.top-header .links{display:flex;gap:8px;align-items:center}
+.top-header a,.top-header .hdr-btn{color:#4a5a6e;text-decoration:none;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.05);transition:.2s;background:none;cursor:pointer;font-family:inherit}
+.top-header a:hover,.top-header .hdr-btn:hover{color:#69f0ae;border-color:rgba(0,230,118,.2)}
+
+.main-area{display:flex;flex:1;overflow:hidden}
+
+/* LEFT PANEL */
+.left-panel{width:290px;background:rgba(6,10,22,.98);border-right:1px solid rgba(0,230,118,.08);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.panel-tabs{display:flex;border-bottom:1px solid rgba(0,230,118,.06);flex-shrink:0}
+.ptab{flex:1;padding:8px 4px;text-align:center;font-size:9px;font-weight:800;color:#2a3a4e;cursor:pointer;transition:.2s;border-bottom:2px solid transparent}
+.ptab:hover{color:#8a98a8}
+.ptab.active{color:#00e676;border-bottom-color:#00e676;background:rgba(0,230,118,.03)}
+.panel-body{flex:1;overflow-y:auto;padding:10px}
+
+/* Layer sections */
+.layer-section{margin-bottom:10px}
+.layer-header{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(14,24,44,.4);border:1px solid rgba(20,40,70,.3);border-radius:6px;cursor:pointer;transition:.2s;margin-bottom:4px}
+.layer-header:hover{border-color:rgba(0,230,118,.15)}
+.layer-header.active{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.05)}
+.layer-header .lh-left{display:flex;align-items:center;gap:6px}
+.layer-header .lh-icon{font-size:14px}
+.layer-header .lh-name{font-size:10px;font-weight:800}
+.layer-header .lh-dim{font-size:8px;color:#4a5a6e;margin-left:4px}
+.layer-header .lh-right{display:flex;align-items:center;gap:4px}
+.layer-header .vis-btn{background:none;border:none;color:#4a5a6e;font-size:12px;cursor:pointer;padding:2px;transition:.2s}
+.layer-header .vis-btn:hover{color:#00e676}
+.layer-header .vis-btn.off{opacity:.3}
+
+/* Tool palettes */
+.tool-palette{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
+.tool-item{display:flex;flex-direction:column;align-items:center;padding:6px 4px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.03);background:rgba(255,255,255,.01);transition:.2s;font-size:8px;color:#4a5a6e;font-weight:700;gap:3px;position:relative}
+.tool-item:hover{border-color:rgba(0,230,118,.15);color:#8a98a8}
+.tool-item.active{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.06);color:#00e676}
+.tool-item .ti-icon{font-size:16px}
+.tool-item .ti-thumb{width:36px;height:36px;border-radius:4px;object-fit:cover;background:rgba(0,0,0,.2)}
+
+/* Building/deco item list */
+.item-list{max-height:260px;overflow-y:auto}
+.item-entry{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:.2s}
+.item-entry:hover{background:rgba(0,230,118,.03);border-color:rgba(0,230,118,.08)}
+.item-entry.selected{background:rgba(0,230,118,.06);border-color:rgba(0,230,118,.25)}
+.item-entry .ie-thumb{width:32px;height:32px;object-fit:contain;border-radius:4px;background:rgba(0,0,0,.2)}
+.item-entry .ie-name{font-size:10px;font-weight:700;flex:1}
+.item-entry .ie-dim{font-size:8px;color:#3a5a6e}
+.item-entry .ie-del{background:none;border:none;color:#ef5350;cursor:pointer;font-size:10px;opacity:.5;transition:.2s;padding:2px}
+.item-entry .ie-del:hover{opacity:1}
+
+/* Buttons */
+.btn{padding:5px 10px;border-radius:6px;border:1px solid rgba(0,230,118,.15);background:rgba(0,230,118,.05);color:#69f0ae;font-size:10px;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.3)}
+.btn.primary{background:rgba(0,230,118,.15);border-color:#00e676;color:#00e676}
+.btn.danger{border-color:rgba(239,83,80,.2);color:#ef5350;background:rgba(239,83,80,.05)}
+.btn.sm{padding:3px 7px;font-size:9px}
+.btn.ai{border-color:rgba(206,147,216,.2);color:#ce93d8;background:rgba(206,147,216,.05)}
+.btn.ai:hover{background:rgba(206,147,216,.12)}
+.btn.upload{border-color:rgba(66,165,245,.2);color:#64b5f6;background:rgba(66,165,245,.05)}
+.btn-row{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+
+/* Brush size */
+.brush-size{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.brush-size label{font-size:8px;font-weight:800;color:#3a5a4e;white-space:nowrap}
+.brush-size input{flex:1;accent-color:#00e676}
+.brush-size .bs-val{font-size:10px;color:#69f0ae;font-weight:800;min-width:16px;text-align:center}
+
+/* Height slider */
+.height-ctrl{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.height-ctrl label{font-size:8px;font-weight:800;color:#3a5a4e;white-space:nowrap}
+.height-ctrl input{flex:1;accent-color:#ffd740}
+.height-ctrl .hc-val{font-size:10px;color:#ffd740;font-weight:800;min-width:16px;text-align:center}
+
+/* Props */
+.prop-field{margin-bottom:6px}
+.prop-field label{display:block;font-size:8px;font-weight:800;color:#3a5a4e;margin-bottom:2px;text-transform:uppercase;letter-spacing:1px}
+.prop-field input,.prop-field select{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:5px;padding:5px 8px;color:#e0e6ed;font-size:11px;font-family:inherit;outline:none;transition:.2s}
+.prop-field input:focus{border-color:rgba(0,230,118,.3)}
+
+/* RIGHT PANEL */
+.right-panel{width:240px;background:rgba(6,10,22,.98);border-left:1px solid rgba(0,230,118,.08);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.rp-header{padding:8px 12px;border-bottom:1px solid rgba(0,230,118,.06);font-size:10px;font-weight:800;color:#3a5a4e;text-transform:uppercase;letter-spacing:2px;flex-shrink:0}
+.rp-body{flex:1;overflow-y:auto;padding:10px}
+
+/* Canvas */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background:#060a14}
+#mapCanvas{display:block;position:absolute;top:0;left:0;cursor:crosshair}
+
+.canvas-overlay{position:absolute;bottom:8px;left:8px;display:flex;gap:5px;z-index:10;flex-wrap:wrap}
+.co-badge{padding:3px 8px;border-radius:6px;background:rgba(8,12,24,.92);border:1px solid rgba(0,230,118,.08);font-size:9px;color:#8a98a8;font-weight:700;backdrop-filter:blur(4px)}
+.co-badge b{color:#00e676}
+.canvas-overlay-r{position:absolute;bottom:8px;right:8px;display:flex;gap:4px;z-index:10}
+.zoom-btn{background:rgba(8,12,24,.92);border:1px solid rgba(0,230,118,.08);color:#69f0ae;font-size:14px;width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.zoom-btn:hover{background:rgba(0,230,118,.08)}
+
+/* Minimap */
+.minimap-wrap{position:absolute;top:8px;right:8px;z-index:10;background:rgba(8,12,24,.95);border:1px solid rgba(0,230,118,.1);border-radius:8px;padding:3px;backdrop-filter:blur(6px)}
+#minimapCv{display:block;border-radius:5px}
+
+/* Coord info */
+.coord-info{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:10;padding:3px 10px;border-radius:6px;background:rgba(8,12,24,.92);border:1px solid rgba(0,230,118,.08);font-size:10px;color:#8a98a8;font-weight:700;pointer-events:none;white-space:nowrap}
+
+/* Toast */
+.toast-container{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.toast{padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;animation:slideIn .3s;backdrop-filter:blur(8px)}
+.toast.success{background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.2);color:#69f0ae}
+.toast.error{background:rgba(239,83,80,.12);border:1px solid rgba(239,83,80,.2);color:#ef5350}
+.toast.info{background:rgba(66,165,245,.12);border:1px solid rgba(66,165,245,.2);color:#64b5f6}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+.sep{height:1px;background:rgba(0,230,118,.04);margin:6px 0}
+.sec-title{font-size:9px;font-weight:800;color:#69f0ae;margin:6px 0 4px;display:flex;align-items:center;gap:4px;letter-spacing:.5px}
+
+/* Status bar */
+.status-bar{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;background:rgba(6,10,22,.98);border-top:1px solid rgba(0,230,118,.06);font-size:9px;color:#3a4a5e;flex-shrink:0}
+.status-bar b{color:#69f0ae}
+
+/* Base map upload */
+.base-upload{border:2px dashed rgba(206,147,216,.15);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.3s;margin-bottom:8px}
+.base-upload:hover{border-color:rgba(206,147,216,.3);background:rgba(206,147,216,.03)}
+.base-upload .bu-icon{font-size:24px;margin-bottom:2px}
+.base-upload .bu-text{font-size:10px;color:#ce93d8;font-weight:700}
+.base-upload .bu-hint{font-size:8px;color:#4a5a6e;margin-top:3px}
+.base-upload input[type="file"]{display:none}
+
+/* Toggle switch */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.toggle-row label{font-size:9px;color:#8a98a8;font-weight:600}
+.toggle-sw{position:relative;width:30px;height:16px;cursor:pointer}
+.toggle-sw input{display:none}
+.toggle-sw .slider{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.08);border-radius:8px;transition:.2s}
+.toggle-sw input:checked+.slider{background:rgba(0,230,118,.3)}
+.toggle-sw .slider::before{content:'';position:absolute;width:12px;height:12px;left:2px;bottom:2px;background:#666;border-radius:50%;transition:.2s}
+.toggle-sw input:checked+.slider::before{transform:translateX(14px);background:#00e676}
+
+/* Elevation mode indicator */
+.elev-badge{font-size:8px;color:#ffd740;background:rgba(255,215,64,.08);padding:2px 6px;border-radius:4px;margin-left:4px}
+
+/* === ASSET IMPORT MODAL === */
+.import-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.import-overlay.open{display:flex}
+.import-dialog{background:rgba(8,14,28,.99);border:1px solid rgba(0,230,118,.15);border-radius:16px;width:580px;max-width:95vw;max-height:85vh;overflow:hidden;animation:idIn .25s ease-out;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+@keyframes idIn{from{opacity:0;transform:scale(.95) translateY(12px)}to{opacity:1;transform:none}}
+.id-header{padding:14px 18px;border-bottom:1px solid rgba(0,230,118,.08);display:flex;justify-content:space-between;align-items:center}
+.id-header h3{font-size:14px;font-weight:900;display:flex;align-items:center;gap:8px}
+.id-header h3 em{font-style:normal;background:linear-gradient(135deg,#00e676,#69f0ae);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.id-close{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#4a5a6e;width:28px;height:28px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:.15s}
+.id-close:hover{color:#fff;background:rgba(255,255,255,.08)}
+.id-body{padding:16px 18px;overflow-y:auto;max-height:calc(85vh - 140px)}
+
+/* Drop zone */
+.drop-zone{border:2px dashed rgba(0,230,118,.15);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:.3s;margin-bottom:14px;background:rgba(0,230,118,.01)}
+.drop-zone:hover,.drop-zone.drag-over{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.04)}
+.drop-zone .dz-icon{font-size:36px;margin-bottom:6px}
+.drop-zone .dz-text{font-size:12px;color:#69f0ae;font-weight:700}
+.drop-zone .dz-hint{font-size:9px;color:#4a5a6e;margin-top:4px}
+.drop-zone input[type="file"]{display:none}
+
+/* Preview grid */
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:14px;max-height:200px;overflow-y:auto}
+.preview-card{position:relative;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.05);background:rgba(0,0,0,.2);cursor:pointer;transition:.2s;aspect-ratio:1}
+.preview-card:hover{border-color:rgba(0,230,118,.2)}
+.preview-card.selected{border-color:#00e676;box-shadow:0 0 8px rgba(0,230,118,.2)}
+.preview-card img{width:100%;height:100%;object-fit:contain}
+.preview-card .pc-label{position:absolute;bottom:0;left:0;right:0;padding:2px 4px;background:rgba(0,0,0,.7);font-size:7px;color:#8a98a8;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preview-card .pc-check{position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:#00e676;color:#000;font-size:10px;display:none;align-items:center;justify-content:center;font-weight:900}
+.preview-card.selected .pc-check{display:flex}
+
+/* Import form fields */
+.import-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.import-fields .prop-field{margin:0}
+.import-fields select{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:5px;padding:5px 8px;color:#e0e6ed;font-size:11px;font-family:inherit;outline:none}
+
+/* Import actions */
+.id-actions{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid rgba(0,230,118,.06)}
+
+/* Custom asset palette items */
+.tool-item .ti-custom{position:absolute;top:1px;right:1px;width:10px;height:10px;border-radius:50%;background:rgba(206,147,216,.3);font-size:5px;display:flex;align-items:center;justify-content:center;color:#ce93d8}
+
+/* Asset library grid */
+.asset-lib{margin-top:8px}
+.asset-lib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.asset-lib-header span{font-size:8px;font-weight:800;color:#3a5a4e;text-transform:uppercase;letter-spacing:1px}
+.asset-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;max-height:140px;overflow-y:auto}
+.asset-grid .ag-item{border-radius:5px;border:1px solid rgba(255,255,255,.03);background:rgba(0,0,0,.15);cursor:pointer;transition:.15s;padding:2px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative}
+.asset-grid .ag-item:hover{border-color:rgba(0,230,118,.15)}
+.asset-grid .ag-item.active{border-color:#00e676;background:rgba(0,230,118,.06)}
+.asset-grid .ag-item img{max-width:100%;max-height:100%;object-fit:contain;border-radius:3px}
+.asset-grid .ag-item .ag-name{position:absolute;bottom:1px;left:0;right:0;font-size:6px;color:#6a7a8e;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-header">
+    <h1>🗺️ <span>SYNAPSE-beta</span> 2.5D 等距地图编辑器</h1>
+    <div class="links">
+      <a href="/village/editor">👤 角色编辑器</a>
+      <a href="/village/game">🎮 返回游戏</a>
+      <button class="btn primary sm" onclick="saveMap()">💾 保存</button>
+      <button class="btn sm" onclick="exportMap()">📤 导出</button>
+      <button class="btn sm" onclick="importMapJSON()">📥 导入</button>
+      <button class="btn sm" onclick="undo()" title="Ctrl+Z">↩ 撤销</button>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="panel-tabs">
+        <div class="ptab active" data-tab="layers" onclick="switchTab('layers')">📚 图层</div>
+        <div class="ptab" data-tab="objects" onclick="switchTab('objects')">🏗️ 对象</div>
+        <div class="ptab" data-tab="settings" onclick="switchTab('settings')">⚙️ 设置</div>
+      </div>
+
+      <div class="panel-body" id="tabLayers">
+        <!-- Base Map Layer -->
+        <div class="layer-section">
+          <div class="layer-header active" data-layer="basemap" onclick="selectLayer('basemap')">
+            <div class="lh-left"><span class="lh-icon">🖼️</span><span class="lh-name">基础地图</span><span class="lh-dim" id="dimBase">底图</span></div>
+            <div class="lh-right"><button class="vis-btn" onclick="event.stopPropagation();toggleVis('basemap')">👁️</button></div>
+          </div>
+          <div id="lc-basemap">
+            <div class="base-upload" onclick="document.getElementById('baseMapFile').click()" id="baseUploadArea">
+              <div class="bu-icon">🗺️</div>
+              <div class="bu-text">上传完整地图底图</div>
+              <div class="bu-hint">PNG/JPG · 作为等距视角底图</div>
+              <input type="file" id="baseMapFile" accept="image/*" onchange="handleBaseMapUpload(this)">
+            </div>
+            <div class="btn-row">
+              <button class="btn sm ai" onclick="useDefaultBaseMap()">🤖 AI底图</button>
+              <button class="btn sm danger" onclick="clearBaseMap()">🗑️ 清除</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Terrain Paint Layer -->
+        <div class="layer-section">
+          <div class="layer-header" data-layer="terrain" onclick="selectLayer('terrain')">
+            <div class="lh-left"><span class="lh-icon">🌍</span><span class="lh-name">地形</span><span class="lh-dim" id="dimTerrain">菱形瓦片</span></div>
+            <div class="lh-right"><button class="vis-btn" onclick="event.stopPropagation();toggleVis('terrain')">👁️</button></div>
+          </div>
+          <div id="lc-terrain" style="display:none">
+            <div class="tool-palette" id="terrainPalette"></div>
+            <div class="asset-lib" id="customTerrainLib"></div>
+            <div class="brush-size">
+              <label>画笔</label>
+              <input type="range" min="1" max="5" value="1" id="brushSize" oninput="document.getElementById('brushVal').textContent=this.value">
+              <span class="bs-val" id="brushVal">1</span>
+            </div>
+            <div class="height-ctrl">
+              <label>高度</label>
+              <input type="range" min="0" max="4" value="0" id="elevBrush" oninput="document.getElementById('elevVal').textContent=this.value">
+              <span class="hc-val" id="elevVal">0</span>
+            </div>
+            <div class="btn-row">
+              <button class="btn sm" onclick="fillTerrain()">🪣 填充</button>
+              <button class="btn sm" onclick="clearTerrain()">🗑️ 清空</button>
+              <button class="btn sm" onclick="autoGenTerrain()">🎲 自动</button>
+              <button class="btn sm ai" onclick="openAIGenerate('terrain')">🤖 AI生成</button>
+              <button class="btn sm upload" onclick="openAssetImport('terrain')">📁 导入</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Buildings Layer -->
+        <div class="layer-section">
+          <div class="layer-header" data-layer="buildings" onclick="selectLayer('buildings')">
+            <div class="lh-left"><span class="lh-icon">🏘️</span><span class="lh-name">建筑物</span><span class="lh-dim" id="dimBldg">2.5D建筑</span></div>
+            <div class="lh-right"><button class="vis-btn" onclick="event.stopPropagation();toggleVis('buildings')">👁️</button></div>
+          </div>
+          <div id="lc-buildings" style="display:none">
+            <div class="item-list" id="buildingPalette"></div>
+            <div class="asset-lib" id="customBuildingLib"></div>
+            <div class="btn-row">
+              <button class="btn sm ai" onclick="openAIGenerate('building')">🤖 AI生成</button>
+              <button class="btn sm upload" onclick="openAssetImport('building')">📁 导入</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Farmland Layer -->
+        <div class="layer-section">
+          <div class="layer-header" data-layer="farmland" onclick="selectLayer('farmland')">
+            <div class="lh-left"><span class="lh-icon">🌾</span><span class="lh-name">种植区</span><span class="lh-dim" id="dimFarm">农田</span></div>
+            <div class="lh-right"><button class="vis-btn" onclick="event.stopPropagation();toggleVis('farmland')">👁️</button></div>
+          </div>
+          <div id="lc-farmland" style="display:none">
+            <div class="tool-palette" id="farmPalette"></div>
+            <div class="asset-lib" id="customFarmLib"></div>
+            <div class="btn-row">
+              <button class="btn sm upload" onclick="openAssetImport('farmland')">📁 导入</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Decorations Layer -->
+        <div class="layer-section">
+          <div class="layer-header" data-layer="decorations" onclick="selectLayer('decorations')">
+            <div class="lh-left"><span class="lh-icon">🌳</span><span class="lh-name">装饰</span><span class="lh-dim" id="dimDeco">树/装饰</span></div>
+            <div class="lh-right"><button class="vis-btn" onclick="event.stopPropagation();toggleVis('decorations')">👁️</button></div>
+          </div>
+          <div id="lc-decorations" style="display:none">
+            <div class="item-list" id="decoPalette"></div>
+            <div class="asset-lib" id="customDecoLib"></div>
+            <div class="btn-row">
+              <button class="btn sm ai" onclick="openAIGenerate('decoration')">🤖 AI生成</button>
+              <button class="btn sm upload" onclick="openAssetImport('decoration')">📁 导入</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <!-- Zones Layer -->
+        <div class="layer-section">
+          <div class="layer-header" data-layer="zones" onclick="selectLayer('zones')">
+            <div class="lh-left"><span class="lh-icon">📐</span><span class="lh-name">区域</span><span class="lh-dim">逻辑区划</span></div>
+            <div class="lh-right"><button class="vis-btn" onclick="event.stopPropagation();toggleVis('zones')">👁️</button></div>
+          </div>
+          <div id="lc-zones" style="display:none">
+            <div class="btn-row">
+              <button class="btn sm" onclick="addZone()">➕ 添加区域</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objects tab -->
+      <div class="panel-body" id="tabObjects" style="display:none">
+        <div class="sec-title">🏘️ 已放置对象</div>
+        <div class="item-list" id="objectList"></div>
+      </div>
+
+      <!-- Settings tab -->
+      <div class="panel-body" id="tabSettings" style="display:none">
+        <div class="sec-title">⚙️ 地图设置</div>
+        <div class="prop-field"><label>地图宽 (格)</label><input type="number" id="cfgW" value="20" min="8" max="40" onchange="resizeMap()"></div>
+        <div class="prop-field"><label>地图高 (格)</label><input type="number" id="cfgH" value="14" min="6" max="30" onchange="resizeMap()"></div>
+        <div class="prop-field"><label>瓦片宽度 (px)</label><input type="number" id="cfgTW" value="64" min="32" max="128" onchange="updateTileSize()"></div>
+        <div class="prop-field"><label>瓦片高度 (px)</label><input type="number" id="cfgTH" value="32" min="16" max="64" onchange="updateTileSize()"></div>
+        <div class="sep"></div>
+        <div class="sec-title">🏔️ 显示选项</div>
+        <div class="toggle-row"><label>显示高度</label><label class="toggle-sw"><input type="checkbox" id="showElev" checked onchange="showElevation=this.checked"><span class="slider"></span></label></div>
+        <div class="toggle-row"><label>显示网格</label><label class="toggle-sw"><input type="checkbox" id="showGrid" checked onchange="showGridLines=this.checked"><span class="slider"></span></label></div>
+        <div class="toggle-row"><label>地形边缘</label><label class="toggle-sw"><input type="checkbox" id="showEdge" checked onchange="showTerrainEdge=this.checked"><span class="slider"></span></label></div>
+        <div class="toggle-row"><label>环境光效</label><label class="toggle-sw"><input type="checkbox" id="showAtmo" checked onchange="showAtmosphere=this.checked"><span class="slider"></span></label></div>
+        <div class="toggle-row"><label>水面动画</label><label class="toggle-sw"><input type="checkbox" id="showWater" checked onchange="showWaterAnim=this.checked"><span class="slider"></span></label></div>
+        <div class="toggle-row"><label>树摇动画</label><label class="toggle-sw"><input type="checkbox" id="showSway" checked onchange="showTreeSway=this.checked"><span class="slider"></span></label></div>
+        <div class="sep"></div>
+        <div class="sec-title">✨ 动画效果</div>
+        <div id="animToggles"></div>
+      </div>
+    </div>
+
+    <!-- CANVAS AREA -->
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="mapCanvas"></canvas>
+      <div class="coord-info" id="coordInfo">等距: 0, 0</div>
+      <div class="canvas-overlay">
+        <div class="co-badge">图层: <b id="curLayerName">基础地图</b></div>
+        <div class="co-badge">地图: <b id="mapSizeLabel">20x14</b></div>
+        <div class="co-badge">瓦片: <b id="tileSizeLabel">64x32</b></div>
+        <div class="co-badge" id="elevBadge" style="display:none">高度: <b id="hoverElev">0</b></div>
+      </div>
+      <div class="canvas-overlay-r">
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+        <button class="zoom-btn" onclick="zoomOut()">-</button>
+        <button class="zoom-btn" onclick="resetView()">⟲</button>
+      </div>
+      <div class="minimap-wrap"><canvas id="minimapCv" width="180" height="100"></canvas></div>
+    </div>
+
+    <!-- RIGHT PANEL: Properties -->
+    <div class="right-panel">
+      <div class="rp-header">📋 属性面板</div>
+      <div class="rp-body" id="propsPanel">
+        <div style="font-size:10px;color:#3a4a5e;text-align:center;padding:20px">点击地图上的对象查看属性</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span>SYNAPSE-beta Map Editor v5.0 | <b>2.5D 等距视角</b> · 45度投影 · 高度图 · AI 生成</span>
+    <span id="statusText">就绪</span>
+    <span>Ctrl+S 保存 | Ctrl+Z 撤销 | Del 删除 | Space 拖拽 | 滚轮缩放</span>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<!-- ASSET IMPORT MODAL -->
+<div class="import-overlay" id="importOverlay" onclick="if(event.target===this)closeImportDialog()">
+  <div class="import-dialog">
+    <div class="id-header">
+      <h3>📦 <em>导入外部素材</em> <span id="importCategoryLabel" style="font-size:10px;color:#4a5a6e;font-weight:600;margin-left:4px"></span></h3>
+      <button class="id-close" onclick="closeImportDialog()">✕</button>
+    </div>
+    <div class="id-body">
+      <div class="drop-zone" id="importDropZone" onclick="document.getElementById('importFileInput').click()">
+        <div class="dz-icon">📁</div>
+        <div class="dz-text">拖拽或点击上传素材图片</div>
+        <div class="dz-hint">支持 PNG/JPG/WebP · 透明背景最佳 · 可多选文件批量导入</div>
+        <input type="file" id="importFileInput" accept="image/*" multiple onchange="handleImportFiles(this.files)">
+      </div>
+      <div class="preview-grid" id="importPreviewGrid" style="display:none"></div>
+      <div class="import-fields" id="importFields" style="display:none">
+        <div class="prop-field">
+          <label>素材类别</label>
+          <select id="importCategory">
+            <option value="terrain">🌍 地形瓦片</option>
+            <option value="building">🏘️ 建筑物</option>
+            <option value="decoration">🌳 装饰物</option>
+            <option value="farmland">🌾 农田</option>
+            <option value="water">🌊 水域</option>
+          </select>
+        </div>
+        <div class="prop-field">
+          <label>素材名称</label>
+          <input type="text" id="importName" placeholder="如：樱花草地、竹亭">
+        </div>
+        <div class="prop-field">
+          <label>瓦片宽 (px)</label>
+          <input type="number" id="importTileW" value="64" min="16" max="512">
+        </div>
+        <div class="prop-field">
+          <label>瓦片高 (px)</label>
+          <input type="number" id="importTileH" value="32" min="16" max="512">
+        </div>
+        <div class="prop-field" style="grid-column:span 2">
+          <label>标签 (逗号分隔)</label>
+          <input type="text" id="importTags" placeholder="草地, 春天, 手绘">
+        </div>
+      </div>
+      <!-- Existing asset library browser -->
+      <div class="sep"></div>
+      <div class="sec-title" style="cursor:pointer" onclick="toggleAssetBrowser()">📚 已有素材库 <span id="assetBrowserArrow" style="font-size:8px;color:#4a5a6e">▼</span></div>
+      <div id="assetBrowser" style="display:none">
+        <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">
+          <button class="btn sm" onclick="filterBrowserAssets('all')">全部</button>
+          <button class="btn sm" onclick="filterBrowserAssets('terrain')">地形</button>
+          <button class="btn sm" onclick="filterBrowserAssets('building')">建筑</button>
+          <button class="btn sm" onclick="filterBrowserAssets('decoration')">装饰</button>
+          <button class="btn sm" onclick="filterBrowserAssets('farmland')">农田</button>
+          <button class="btn sm" onclick="filterBrowserAssets('water')">水域</button>
+        </div>
+        <div class="preview-grid" id="assetBrowserGrid"></div>
+      </div>
+    </div>
+    <div class="id-actions">
+      <button class="btn" onclick="closeImportDialog()">取消</button>
+      <button class="btn primary" id="importConfirmBtn" onclick="confirmImport()" style="display:none">📥 导入选中 (<span id="importCount">0</span>)</button>
+      <button class="btn primary" id="uploadConfirmBtn" onclick="uploadAndImport()" style="display:none">⬆️ 上传并导入 (<span id="uploadCount">0</span>)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// =====================================================
+// ISOMETRIC MAP DATA MODEL
+// =====================================================
+let MAP_W = 20, MAP_H = 14;
+let TILE_W = 64, TILE_H = 32; // Isometric 2:1 diamond tiles
+const ELEV_PX = 8; // pixels per elevation level
+
+const mapData = {
+  width: MAP_W, height: MAP_H, tileW: TILE_W, tileH: TILE_H,
+  baseMapUrl: null,
+  terrain: [],         // [y][x] = terrain index
+  elevation: [],       // [y][x] = height level (0-4)
+  zones: [],           // { id, name, x, y, w, h, color }
+  farmland: [],        // { id, name, type, x, y, w, h }
+  buildings: [],       // { id, type, name, x, y, w, h, icon }
+  decorations: [],     // { id, type, x, y, scale }
+  residential: [],
+  animations: {
+    'water-shimmer': true, 'tree-wind': true, 'building-glow': true,
+    'day-night': true, shadows: true, 'synapse-lines': true
+  },
+  version: 5
+};
+
+// Init terrain + elevation grids
+function initGrids() {
+  mapData.terrain = [];
+  mapData.elevation = [];
+  for (let y = 0; y < MAP_H; y++) {
+    mapData.terrain[y] = new Array(MAP_W).fill(0);
+    mapData.elevation[y] = new Array(MAP_W).fill(0);
+  }
+}
+initGrids();
+
+// =====================================================
+// ISOMETRIC PROJECTION MATH
+// =====================================================
+function isoToScreen(col, row) {
+  return {
+    x: (col - row) * (TILE_W / 2),
+    y: (col + row) * (TILE_H / 2)
+  };
+}
+
+function screenToIso(px, py) {
+  return {
+    col: (px / (TILE_W / 2) + py / (TILE_H / 2)) / 2,
+    row: (py / (TILE_H / 2) - px / (TILE_W / 2)) / 2
+  };
+}
+
+function getWorldBounds() {
+  const tl = isoToScreen(0, 0);
+  const tr = isoToScreen(MAP_W, 0);
+  const bl = isoToScreen(0, MAP_H);
+  const br = isoToScreen(MAP_W, MAP_H);
+  // Account for max elevation
+  const maxE = 4 * ELEV_PX;
+  return {
+    minX: bl.x, maxX: tr.x,
+    minY: tl.y - maxE, maxY: br.y,
+    w: tr.x - bl.x,
+    h: br.y - tl.y + maxE
+  };
+}
+
+function getOriginOffset() {
+  const b = getWorldBounds();
+  return { x: -b.minX, y: 4 * ELEV_PX };
+}
+
+// =====================================================
+// EDITOR STATE
+// =====================================================
+let activeLayer = 'basemap';
+let activeTerrain = 0;
+let activeBuilding = 'village-hall';
+let activeDeco = 'tree-cherry';
+let activeFarm = 'paddy';
+let selectedObject = null;
+let isDrawing = false, isPanning = false, isSpaceDown = false;
+let dragStart = null, dragObject = null;
+let hoverTile = { col: -1, row: -1 };
+
+// Display options
+let showElevation = true, showGridLines = true, showTerrainEdge = true;
+let showAtmosphere = true, showWaterAnim = true, showTreeSway = true;
+
+// Camera
+const cam = { x: 0, y: 0, z: 1.2 };
+
+// Canvas
+const CVS = document.getElementById('mapCanvas');
+const CTX = CVS.getContext('2d');
+let W, H;
+
+// Undo
+const undoStack = [];
+const MAX_UNDO = 40;
+
+function pushUndo() {
+  undoStack.push(JSON.stringify({
+    terrain: mapData.terrain,
+    elevation: mapData.elevation,
+    buildings: mapData.buildings,
+    decorations: mapData.decorations,
+    farmland: mapData.farmland,
+    zones: mapData.zones
+  }));
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+function undo() {
+  if (!undoStack.length) { toast('info', '无可撤销操作'); return; }
+  const snap = JSON.parse(undoStack.pop());
+  mapData.terrain = snap.terrain;
+  mapData.elevation = snap.elevation;
+  mapData.buildings = snap.buildings;
+  mapData.decorations = snap.decorations;
+  mapData.farmland = snap.farmland;
+  mapData.zones = snap.zones;
+  toast('info', '↩ 已撤销');
+}
+
+// Visibility
+const layerVis = { basemap: true, terrain: true, zones: true, farmland: true, buildings: true, decorations: true };
+
+// =====================================================
+// TERRAIN TYPES
+// =====================================================
+const TERRAIN_COLORS = ['#5a9838', '#a07040', '#3888b8', '#609858', '#888890', '#c0a868', '#d06888', '#707070'];
+const TERRAIN_NAMES = ['草地', '泥土', '水面', '水田', '石路', '沙地', '花田', '碎石'];
+const TERRAIN_ICONS = ['🟩', '🟫', '🟦', '🌾', '⬜', '🏖️', '🌸', '🪨'];
+const TERRAIN_KEYS = ['grass','dirt','water','paddy','stone','sand','flower','gravel'];
+const TERRAIN_SIDE  = ['#3a7020','#7a5028','#2068a0','#408040','#606068','#a08850','#a04868','#505050'];
+
+// Building templates
+const BUILDING_TEMPLATES = {
+  'village-hall': { name: '村公所', icon: '🏛️', w: 3, h: 3, height: 3 },
+  'market': { name: '市场', icon: '🏪', w: 3, h: 2, height: 2 },
+  'warehouse': { name: '仓库', icon: '📦', w: 2, h: 3, height: 2.5 },
+  'greenhouse': { name: '温室', icon: '🏡', w: 3, h: 2, height: 1.5 },
+  'weather-station': { name: '气象站', icon: '🌤️', w: 2, h: 2, height: 3 },
+  'lab': { name: '实验室', icon: '🔬', w: 2, h: 2, height: 2 },
+  'training': { name: '培训中心', icon: '📚', w: 2, h: 2, height: 2 },
+  'logistics': { name: '物流中心', icon: '🚚', w: 3, h: 2, height: 2 },
+  'livestream': { name: '直播间', icon: '📹', w: 2, h: 2, height: 2 }
+};
+
+// Decoration templates
+const DECO_TEMPLATES = {
+  'tree-cherry': { name: '樱花树', icon: '🌸', sway: true },
+  'tree-oak':    { name: '橡树',   icon: '🌳', sway: true },
+  'tree-pine':   { name: '松树',   icon: '🌲', sway: true },
+  'well':        { name: '水井',   icon: '⛲' },
+  'lamp':        { name: '灯笼',   icon: '🏮' },
+  'fence':       { name: '栅栏',   icon: '🪵' },
+  'bridge':      { name: '小桥',   icon: '🌉' },
+  'rock':        { name: '石头',   icon: '🪨' },
+  'bush':        { name: '灌木',   icon: '🌿', sway: true },
+  'flower-bed':  { name: '花坛',   icon: '💐' }
+};
+
+// Farm types
+const FARM_TYPES = {
+  'paddy':   { name: '水田', icon: '🌾', color: '#64b44f', fill: 'rgba(100,180,80,0.3)' },
+  'field':   { name: '旱田', icon: '🌱', color: '#b48c3c', fill: 'rgba(180,140,60,0.3)' },
+  'orchard': { name: '果园', icon: '🍊', color: '#f0a030', fill: 'rgba(255,180,60,0.3)' },
+  'tea':     { name: '茶园', icon: '🍵', color: '#50a03c', fill: 'rgba(80,160,60,0.3)' },
+  'lotus':   { name: '莲塘', icon: '🪷', color: '#dc78a0', fill: 'rgba(220,120,160,0.3)' }
+};
+
+// =====================================================
+// ASSET LOADING
+// =====================================================
+let isoAssets = { terrain: {}, buildings: {}, decorations: {}, baseMap: null };
+let isoImages = {};
+let baseMapImg = null;
+let customAssets = [];
+let loadedAssetImages = {};
+
+async function loadAssets() {
+  try {
+    // Load HD assets (fallback chain: iso -> hd -> procedural)
+    const isoResp = await fetch('/api/game/iso-assets');
+    if (isoResp.ok) {
+      isoAssets = await isoResp.json();
+      const preload = (prefix, obj) => {
+        Object.entries(obj).forEach(([name, url]) => {
+          const img = new Image(); img.src = url; isoImages[prefix + name] = img;
+        });
+      };
+      preload('t-', isoAssets.terrain);
+      preload('b-', isoAssets.buildings);
+      preload('d-', isoAssets.decorations);
+      if (isoAssets.baseMap) {
+        baseMapImg = new Image(); baseMapImg.src = isoAssets.baseMap;
+        mapData.baseMapUrl = isoAssets.baseMap;
+      }
+    }
+    // Also load HD assets as fallback
+    const hdResp = await fetch('/api/game/hd-assets');
+    if (hdResp.ok) {
+      const hd = await hdResp.json();
+      const preloadHD = (prefix, obj) => {
+        Object.entries(obj).forEach(([name, url]) => {
+          if (!isoImages[prefix + name]) {
+            const img = new Image(); img.src = url; isoImages[prefix + name] = img;
+          }
+        });
+      };
+      preloadHD('t-', hd.terrain || {});
+      preloadHD('b-', hd.buildings || {});
+      preloadHD('d-', hd.decorations || {});
+    }
+    // Custom assets
+    const custResp = await fetch('/api/editor/map-assets');
+    if (custResp.ok) {
+      customAssets = await custResp.json();
+      customAssets.forEach(a => {
+        if (a.url && !loadedAssetImages[a.url]) {
+          const img = new Image(); img.src = a.url; loadedAssetImages[a.url] = img;
+        }
+        // Register in isoImages for use in palettes and rendering
+        addAssetToIsoImages(a);
+      });
+    }
+    console.log('Assets loaded:', Object.keys(isoImages).length, 'images');
+  } catch (e) { console.warn('Asset loading:', e); }
+}
+
+// =====================================================
+// MAP LOAD/SAVE
+// =====================================================
+async function loadMap() {
+  try {
+    const resp = await fetch('/api/editor/map');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.width) { MAP_W = data.width; mapData.width = MAP_W; }
+      if (data.height) { MAP_H = data.height; mapData.height = MAP_H; }
+      if (data.tileW) { TILE_W = data.tileW; mapData.tileW = TILE_W; }
+      if (data.tileH) { TILE_H = data.tileH; mapData.tileH = TILE_H; }
+      if (data.terrain) mapData.terrain = data.terrain;
+      if (data.elevation) mapData.elevation = data.elevation;
+      if (data.zones) mapData.zones = data.zones;
+      if (data.buildings) mapData.buildings = data.buildings;
+      if (data.farmland) mapData.farmland = data.farmland;
+      if (data.decorations) mapData.decorations = data.decorations;
+      if (data.residential) mapData.residential = data.residential;
+      if (data.animations) Object.assign(mapData.animations, data.animations);
+      if (data.baseMapUrl) {
+        mapData.baseMapUrl = data.baseMapUrl;
+        baseMapImg = new Image(); baseMapImg.src = data.baseMapUrl;
+      }
+      // Ensure grids match dimensions
+      while (mapData.terrain.length < MAP_H) mapData.terrain.push(new Array(MAP_W).fill(0));
+      mapData.terrain.forEach(r => { while (r.length < MAP_W) r.push(0); });
+      if (!mapData.elevation || !mapData.elevation.length) {
+        mapData.elevation = [];
+        for (let y = 0; y < MAP_H; y++) mapData.elevation[y] = new Array(MAP_W).fill(0);
+      }
+      while (mapData.elevation.length < MAP_H) mapData.elevation.push(new Array(MAP_W).fill(0));
+      mapData.elevation.forEach(r => { while (r.length < MAP_W) r.push(0); });
+      updateUI();
+      toast('success', `地图已加载 (${MAP_W}x${MAP_H})`);
+    }
+  } catch (e) { /* fresh map */ }
+}
+
+async function saveMap() {
+  mapData.width = MAP_W; mapData.height = MAP_H;
+  mapData.tileW = TILE_W; mapData.tileH = TILE_H;
+  try {
+    const resp = await fetch('/api/editor/map', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mapData)
+    });
+    if (resp.ok) toast('success', '💾 地图已保存');
+    else toast('error', '保存失败');
+  } catch (e) { toast('error', '保存失败: ' + e.message); }
+}
+
+function exportMap() {
+  const blob = new Blob([JSON.stringify(mapData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'synapse-iso-map.json'; a.click();
+  toast('info', '📤 已导出');
+}
+
+function importMapJSON() {
+  const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        Object.assign(mapData, data);
+        MAP_W = mapData.width || 20; MAP_H = mapData.height || 14;
+        TILE_W = mapData.tileW || 64; TILE_H = mapData.tileH || 32;
+        if (!mapData.elevation) { mapData.elevation = []; for (let y = 0; y < MAP_H; y++) mapData.elevation[y] = new Array(MAP_W).fill(0); }
+        updateUI(); toast('success', '📥 已导入');
+      } catch (err) { toast('error', '导入失败: 无效JSON'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// =====================================================
+// UI MANAGEMENT
+// =====================================================
+function switchTab(tab) {
+  document.querySelectorAll('.ptab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('tabLayers').style.display = tab === 'layers' ? '' : 'none';
+  document.getElementById('tabObjects').style.display = tab === 'objects' ? '' : 'none';
+  document.getElementById('tabSettings').style.display = tab === 'settings' ? '' : 'none';
+  if (tab === 'objects') refreshObjectList();
+}
+
+function selectLayer(layer) {
+  activeLayer = layer;
+  document.querySelectorAll('.layer-header').forEach(h => h.classList.toggle('active', h.dataset.layer === layer));
+  ['basemap','terrain','buildings','farmland','decorations','zones'].forEach(l => {
+    const el = document.getElementById('lc-' + l);
+    if (el) el.style.display = l === layer ? '' : 'none';
+  });
+  const names = { basemap:'基础地图', terrain:'地形绘制', buildings:'建筑物', farmland:'种植区域', decorations:'装饰物', zones:'功能区域' };
+  document.getElementById('curLayerName').textContent = names[layer] || layer;
+  document.getElementById('elevBadge').style.display = (layer === 'terrain' && showElevation) ? '' : 'none';
+}
+
+function toggleVis(layer) {
+  layerVis[layer] = !layerVis[layer];
+  const btn = document.querySelector(`.layer-header[data-layer="${layer}"] .vis-btn`);
+  if (btn) btn.classList.toggle('off', !layerVis[layer]);
+}
+
+function updateUI() {
+  document.getElementById('cfgW').value = MAP_W;
+  document.getElementById('cfgH').value = MAP_H;
+  document.getElementById('cfgTW').value = TILE_W;
+  document.getElementById('cfgTH').value = TILE_H;
+  document.getElementById('mapSizeLabel').textContent = `${MAP_W}x${MAP_H}`;
+  document.getElementById('tileSizeLabel').textContent = `${TILE_W}x${TILE_H}`;
+  renderPalettes();
+}
+
+function renderPalettes() {
+  // Terrain
+  const tp = document.getElementById('terrainPalette');
+  tp.innerHTML = TERRAIN_NAMES.map((n, i) => {
+    const img = isoImages['t-' + TERRAIN_KEYS[i]];
+    const thumb = (img && img.src) ? `<img class="ti-thumb" src="${img.src}">` : `<span class="ti-icon">${TERRAIN_ICONS[i]}</span>`;
+    return `<div class="tool-item${activeTerrain===i?' active':''}" onclick="selectTerrain(${i})">${thumb}<span>${n}</span></div>`;
+  }).join('');
+
+  // Buildings
+  const bp = document.getElementById('buildingPalette');
+  bp.innerHTML = Object.entries(BUILDING_TEMPLATES).map(([k,v]) => {
+    const img = isoImages['b-' + k];
+    const thumb = (img && img.src) ? `<img class="ie-thumb" src="${img.src}">` : '';
+    return `<div class="item-entry${k===activeBuilding?' selected':''}" onclick="selectBuilding('${k}')">
+      ${thumb || `<span style="font-size:18px;width:32px;text-align:center">${v.icon}</span>`}
+      <span class="ie-name">${v.name}</span><span class="ie-dim">${v.w}x${v.h}</span>
+    </div>`;
+  }).join('');
+
+  // Decorations
+  const dp = document.getElementById('decoPalette');
+  dp.innerHTML = Object.entries(DECO_TEMPLATES).map(([k,v]) => {
+    const img = isoImages['d-' + k];
+    const thumb = (img && img.src) ? `<img class="ie-thumb" src="${img.src}">` : '';
+    return `<div class="item-entry${k===activeDeco?' selected':''}" onclick="selectDeco('${k}')">
+      ${thumb || `<span style="font-size:18px;width:32px;text-align:center">${v.icon}</span>`}
+      <span class="ie-name">${v.name}</span>
+    </div>`;
+  }).join('');
+
+  // Farm
+  const fp = document.getElementById('farmPalette');
+  fp.innerHTML = Object.entries(FARM_TYPES).map(([k,v]) =>
+    `<div class="tool-item${k===activeFarm?' active':''}" onclick="selectFarm('${k}')"><span class="ti-icon">${v.icon}</span><span>${v.name}</span></div>`
+  ).join('');
+}
+
+function selectTerrain(i) { activeTerrain = i; renderPalettes(); }
+function selectBuilding(k) { activeBuilding = k; renderPalettes(); }
+function selectDeco(k) { activeDeco = k; renderPalettes(); }
+function selectFarm(k) { activeFarm = k; renderPalettes(); }
+
+function refreshObjectList() {
+  const list = document.getElementById('objectList');
+  let html = '';
+  mapData.buildings.forEach((b, i) => {
+    html += `<div class="item-entry" onclick="selectObj('buildings',${i})"><span style="font-size:14px">${BUILDING_TEMPLATES[b.type]?.icon||'🏗️'}</span><span class="ie-name">${b.name||b.type}</span><span class="ie-dim">(${b.x.toFixed(1)},${b.y.toFixed(1)})</span><button class="ie-del" onclick="event.stopPropagation();removeObj('buildings',${i})">✕</button></div>`;
+  });
+  mapData.decorations.forEach((d, i) => {
+    html += `<div class="item-entry" onclick="selectObj('decorations',${i})"><span style="font-size:14px">${DECO_TEMPLATES[d.type]?.icon||'🎄'}</span><span class="ie-name">${DECO_TEMPLATES[d.type]?.name||d.type}</span><span class="ie-dim">(${d.x.toFixed(1)},${d.y.toFixed(1)})</span><button class="ie-del" onclick="event.stopPropagation();removeObj('decorations',${i})">✕</button></div>`;
+  });
+  mapData.farmland.forEach((f, i) => {
+    html += `<div class="item-entry" onclick="selectObj('farmland',${i})"><span style="font-size:14px">${FARM_TYPES[f.type]?.icon||'🌾'}</span><span class="ie-name">${f.name}</span><span class="ie-dim">${f.w}x${f.h}</span><button class="ie-del" onclick="event.stopPropagation();removeObj('farmland',${i})">✕</button></div>`;
+  });
+  list.innerHTML = html || '<div style="font-size:10px;color:#3a4a5e;text-align:center;padding:20px">暂无对象</div>';
+}
+
+function selectObj(layer, idx) { selectedObject = { layer, index: idx }; updatePropsPanel(); }
+function removeObj(layer, idx) { pushUndo(); mapData[layer].splice(idx, 1); refreshObjectList(); selectedObject = null; updatePropsPanel(); }
+
+function updatePropsPanel() {
+  const panel = document.getElementById('propsPanel');
+  if (!selectedObject) { panel.innerHTML = '<div style="font-size:10px;color:#3a4a5e;text-align:center;padding:20px">点击地图上的对象查看属性</div>'; return; }
+  const obj = mapData[selectedObject.layer]?.[selectedObject.index];
+  if (!obj) { selectedObject = null; panel.innerHTML = '<div style="font-size:10px;color:#3a4a5e;text-align:center;padding:20px">对象不存在</div>'; return; }
+  const L = selectedObject.layer, I = selectedObject.index;
+  let html = `<div class="sec-title">${L} #${I}</div>`;
+  html += `<div class="prop-field"><label>名称</label><input value="${obj.name||obj.type||''}" onchange="mapData['${L}'][${I}].name=this.value"></div>`;
+  html += `<div class="prop-field"><label>X (col)</label><input type="number" step="0.5" value="${obj.x}" onchange="mapData['${L}'][${I}].x=+this.value"></div>`;
+  html += `<div class="prop-field"><label>Y (row)</label><input type="number" step="0.5" value="${obj.y}" onchange="mapData['${L}'][${I}].y=+this.value"></div>`;
+  if (obj.w !== undefined) html += `<div class="prop-field"><label>宽</label><input type="number" step="1" min="1" max="8" value="${obj.w}" onchange="mapData['${L}'][${I}].w=+this.value"></div>`;
+  if (obj.h !== undefined) html += `<div class="prop-field"><label>高</label><input type="number" step="1" min="1" max="8" value="${obj.h}" onchange="mapData['${L}'][${I}].h=+this.value"></div>`;
+  if (obj.scale !== undefined) html += `<div class="prop-field"><label>缩放</label><input type="number" step="0.1" min="0.3" max="3" value="${obj.scale}" onchange="mapData['${L}'][${I}].scale=+this.value"></div>`;
+  html += `<div class="btn-row"><button class="btn sm danger" onclick="removeObj('${L}',${I})">🗑️ 删除</button></div>`;
+  panel.innerHTML = html;
+}
+
+// =====================================================
+// BASE MAP
+// =====================================================
+function handleBaseMapUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    baseMapImg = new Image();
+    baseMapImg.onload = () => {
+      mapData.baseMapUrl = ev.target.result;
+      toast('success', `🗺️ 底图 ${baseMapImg.width}x${baseMapImg.height}`);
+    };
+    baseMapImg.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function useDefaultBaseMap() {
+  if (isoAssets.baseMap) {
+    baseMapImg = new Image(); baseMapImg.src = isoAssets.baseMap;
+    mapData.baseMapUrl = isoAssets.baseMap;
+    toast('success', '🤖 AI底图已应用');
+  } else toast('error', '暂无AI底图');
+}
+
+function clearBaseMap() { baseMapImg = null; mapData.baseMapUrl = null; toast('info', '底图已清除'); }
+
+// =====================================================
+// TERRAIN OPS
+// =====================================================
+function fillTerrain() {
+  pushUndo();
+  const elev = parseInt(document.getElementById('elevBrush').value) || 0;
+  const tName = typeof activeTerrain === 'string' ? activeTerrain : TERRAIN_NAMES[activeTerrain];
+  for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
+    mapData.terrain[y][x] = activeTerrain;
+    mapData.elevation[y][x] = elev;
+  }
+  toast('success', `🪣 已填充 ${tName || activeTerrain} h=${elev}`);
+}
+
+function clearTerrain() {
+  pushUndo();
+  for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) { mapData.terrain[y][x] = 0; mapData.elevation[y][x] = 0; }
+  toast('info', '地形已清空');
+}
+
+function autoGenTerrain() {
+  pushUndo();
+  // Perlin-like noise terrain generation
+  const seed = Math.random() * 1000;
+  for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
+    const n1 = Math.sin(x * 0.35 + seed) * Math.cos(y * 0.28 + seed * 0.7);
+    const n2 = Math.sin((x + y) * 0.18 + seed * 0.3) * 0.5;
+    const noise = n1 + n2;
+    // Terrain type
+    if (noise > 0.7) { mapData.terrain[y][x] = 2; mapData.elevation[y][x] = 0; } // water (low)
+    else if (noise > 0.4) { mapData.terrain[y][x] = 3; mapData.elevation[y][x] = 0; } // paddy
+    else if (noise < -0.5) { mapData.terrain[y][x] = 1; mapData.elevation[y][x] = 2; } // dirt (raised)
+    else if (noise < -0.7) { mapData.terrain[y][x] = 4; mapData.elevation[y][x] = 3; } // stone (high)
+    else {
+      mapData.terrain[y][x] = 0; // grass
+      mapData.elevation[y][x] = Math.max(0, Math.round(Math.abs(noise) * 2));
+    }
+  }
+  toast('success', '🎲 自动地形 + 高度已生成');
+}
+
+function paintTerrain(col, row) {
+  const r = Math.floor(row), c = Math.floor(col);
+  if (r < 0 || r >= MAP_H || c < 0 || c >= MAP_W) return;
+  const brush = parseInt(document.getElementById('brushSize').value) || 1;
+  const elev = parseInt(document.getElementById('elevBrush').value) || 0;
+  for (let dy = -brush+1; dy < brush; dy++) for (let dx = -brush+1; dx < brush; dx++) {
+    const ty = r + dy, tx = c + dx;
+    if (ty >= 0 && ty < MAP_H && tx >= 0 && tx < MAP_W) {
+      mapData.terrain[ty][tx] = activeTerrain; // Can be number (0-7) or string ('custom-xxx')
+      mapData.elevation[ty][tx] = elev;
+    }
+  }
+}
+
+// =====================================================
+// PLACEMENT
+// =====================================================
+let _idCounter = 0;
+function genId(prefix) { return prefix + '-' + Date.now().toString(36) + (++_idCounter).toString(36); }
+
+function addZone() {
+  pushUndo();
+  mapData.zones.push({ id: genId('z'), name: '新区域', x: Math.floor(MAP_W/2)-2, y: Math.floor(MAP_H/2)-1, w: 4, h: 3, color: `hsl(${Math.random()*360},60%,50%)` });
+  toast('success', '➕ 区域已添加');
+}
+
+function placeBuilding(col, row) {
+  pushUndo();
+  const isCustom = activeBuilding.startsWith('custom-');
+  const bt = isCustom ? { w: 2, h: 2, name: '自定义建筑', icon: '🏗️' } : (BUILDING_TEMPLATES[activeBuilding] || { w: 2, h: 2 });
+  if (isCustom) {
+    const assetId = activeBuilding.replace('custom-', '');
+    const asset = customAssets.find(a => a.id === assetId);
+    if (asset) bt.name = asset.name;
+  }
+  const b = { id: genId('b'), type: activeBuilding, name: bt.name, x: Math.round(col), y: Math.round(row), w: bt.w, h: bt.h, icon: bt.icon };
+  mapData.buildings.push(b);
+  selectObj('buildings', mapData.buildings.length - 1);
+}
+
+function placeFarmland(col, row) {
+  pushUndo();
+  const isCustom = activeFarm.startsWith('custom-');
+  const ft = isCustom ? { name: '自定义农田' } : (FARM_TYPES[activeFarm] || {});
+  if (isCustom) {
+    const assetId = activeFarm.replace('custom-', '');
+    const asset = customAssets.find(a => a.id === assetId);
+    if (asset) ft.name = asset.name;
+  }
+  mapData.farmland.push({ id: genId('f'), type: activeFarm, name: ft.name || '农田', x: Math.round(col), y: Math.round(row), w: 3, h: 2 });
+  selectObj('farmland', mapData.farmland.length - 1);
+}
+
+// =====================================================
+// RESIZE
+// =====================================================
+function resizeMap() {
+  pushUndo();
+  MAP_W = parseInt(document.getElementById('cfgW').value) || 20;
+  MAP_H = parseInt(document.getElementById('cfgH').value) || 14;
+  mapData.width = MAP_W; mapData.height = MAP_H;
+  while (mapData.terrain.length < MAP_H) mapData.terrain.push(new Array(MAP_W).fill(0));
+  mapData.terrain = mapData.terrain.slice(0, MAP_H);
+  mapData.terrain.forEach((r, i) => { while (r.length < MAP_W) r.push(0); mapData.terrain[i] = r.slice(0, MAP_W); });
+  while (mapData.elevation.length < MAP_H) mapData.elevation.push(new Array(MAP_W).fill(0));
+  mapData.elevation = mapData.elevation.slice(0, MAP_H);
+  mapData.elevation.forEach((r, i) => { while (r.length < MAP_W) r.push(0); mapData.elevation[i] = r.slice(0, MAP_W); });
+  updateUI();
+}
+
+function updateTileSize() {
+  TILE_W = parseInt(document.getElementById('cfgTW').value) || 64;
+  TILE_H = parseInt(document.getElementById('cfgTH').value) || 32;
+  mapData.tileW = TILE_W; mapData.tileH = TILE_H;
+  updateUI();
+}
+
+// =====================================================
+// INPUT HANDLING
+// =====================================================
+function setupInput() {
+  CVS.addEventListener('mousedown', onMouseDown);
+  CVS.addEventListener('mousemove', onMouseMove);
+  CVS.addEventListener('mouseup', onMouseUp);
+  CVS.addEventListener('wheel', onWheel, { passive: false });
+  CVS.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('keydown', onKey);
+  window.addEventListener('keyup', onKeyUp);
+}
+
+function screenToWorld(sx, sy) {
+  return { x: sx / cam.z + cam.x, y: sy / cam.z + cam.y };
+}
+
+function worldToIsoTile(wx, wy) {
+  const off = getOriginOffset();
+  return screenToIso(wx - off.x, wy - off.y);
+}
+
+function onMouseDown(e) {
+  const rect = CVS.getBoundingClientRect();
+  const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  const tile = worldToIsoTile(w.x, w.y);
+
+  // Pan: right-click, middle-click, alt+click, or space+click
+  if (e.button === 1 || e.button === 2 || (e.button === 0 && e.altKey) || (e.button === 0 && isSpaceDown)) {
+    isPanning = true; dragStart = { x: e.clientX, y: e.clientY }; CVS.style.cursor = 'grabbing'; return;
+  }
+
+  if (activeLayer === 'terrain') {
+    pushUndo(); isDrawing = true;
+    paintTerrain(tile.col, tile.row);
+  } else if (activeLayer === 'buildings') {
+    const hit = hitTestBuildings(tile.col, tile.row);
+    if (hit >= 0) { selectObj('buildings', hit); dragObject = { layer: 'buildings', index: hit, startCol: tile.col, startRow: tile.row }; }
+    else placeBuilding(tile.col, tile.row);
+  } else if (activeLayer === 'farmland') {
+    const hit = hitTestFarmland(tile.col, tile.row);
+    if (hit >= 0) { selectObj('farmland', hit); dragObject = { layer: 'farmland', index: hit, startCol: tile.col, startRow: tile.row }; }
+    else placeFarmland(tile.col, tile.row);
+  } else if (activeLayer === 'decorations') {
+    const hit = hitTestDecos(tile.col, tile.row);
+    if (hit >= 0) { selectObj('decorations', hit); dragObject = { layer: 'decorations', index: hit, startCol: tile.col, startRow: tile.row }; }
+    else placeDeco(tile.col, tile.row);
+  } else if (activeLayer === 'zones') {
+    const hit = hitTestZones(tile.col, tile.row);
+    if (hit >= 0) { selectObj('zones', hit); dragObject = { layer: 'zones', index: hit, startCol: tile.col, startRow: tile.row }; }
+  }
+}
+
+function onMouseMove(e) {
+  const rect = CVS.getBoundingClientRect();
+  const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  const tile = worldToIsoTile(w.x, w.y);
+  hoverTile = { col: Math.floor(tile.col), row: Math.floor(tile.row) };
+
+  const elev = (hoverTile.row >= 0 && hoverTile.row < MAP_H && hoverTile.col >= 0 && hoverTile.col < MAP_W)
+    ? (mapData.elevation[hoverTile.row]?.[hoverTile.col] || 0) : 0;
+  document.getElementById('coordInfo').textContent = `格: ${hoverTile.col}, ${hoverTile.row} | 高度: ${elev}`;
+  document.getElementById('hoverElev').textContent = elev;
+
+  if (isPanning) {
+    cam.x -= (e.clientX - dragStart.x) / cam.z;
+    cam.y -= (e.clientY - dragStart.y) / cam.z;
+    dragStart = { x: e.clientX, y: e.clientY }; return;
+  }
+  if (isDrawing && activeLayer === 'terrain') paintTerrain(tile.col, tile.row);
+  if (dragObject) {
+    const obj = mapData[dragObject.layer][dragObject.index];
+    if (obj) {
+      const dc = tile.col - dragObject.startCol, dr = tile.row - dragObject.startRow;
+      // Snap to half-tiles for buildings/farms
+      if (dragObject.layer === 'decorations') {
+        obj.x += dc; obj.y += dr;
+      } else {
+        obj.x = Math.round((obj.x + dc) * 2) / 2;
+        obj.y = Math.round((obj.y + dr) * 2) / 2;
+      }
+      dragObject.startCol = tile.col; dragObject.startRow = tile.row;
+      updatePropsPanel();
+    }
+  }
+}
+
+function onMouseUp() { isDrawing = false; isPanning = false; dragObject = null; CVS.style.cursor = isSpaceDown ? 'grab' : 'crosshair'; }
+
+function onWheel(e) {
+  e.preventDefault();
+  const oldZ = cam.z;
+  cam.z = Math.max(0.3, Math.min(5, cam.z - e.deltaY * 0.002));
+  const rect = CVS.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  cam.x += mx / oldZ - mx / cam.z;
+  cam.y += my / oldZ - my / cam.z;
+}
+
+function onKey(e) {
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveMap(); }
+  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedObject) { removeObj(selectedObject.layer, selectedObject.index); }
+  }
+  if (e.key === ' ') { e.preventDefault(); isSpaceDown = true; CVS.style.cursor = 'grab'; }
+}
+function onKeyUp(e) {
+  if (e.key === ' ') { isSpaceDown = false; CVS.style.cursor = 'crosshair'; }
+}
+
+function zoomIn() { cam.z = Math.min(5, cam.z + 0.2); }
+function zoomOut() { cam.z = Math.max(0.3, cam.z - 0.2); }
+function resetView() {
+  const b = getWorldBounds(); const off = getOriginOffset();
+  cam.z = Math.min(W / (b.w + 120), H / (b.h + 120)) || 1.0;
+  cam.x = off.x + b.minX + b.w / 2 - W / 2 / cam.z;
+  cam.y = -20;
+}
+
+// =====================================================
+// HIT TESTING
+// =====================================================
+function hitTestBuildings(col, row) {
+  for (let i = mapData.buildings.length - 1; i >= 0; i--) {
+    const b = mapData.buildings[i];
+    if (col >= b.x && col < b.x + b.w && row >= b.y && row < b.y + b.h) return i;
+  }
+  return -1;
+}
+function hitTestFarmland(col, row) {
+  for (let i = mapData.farmland.length - 1; i >= 0; i--) {
+    const f = mapData.farmland[i];
+    if (col >= f.x && col < f.x + f.w && row >= f.y && row < f.y + f.h) return i;
+  }
+  return -1;
+}
+function hitTestDecos(col, row) {
+  for (let i = mapData.decorations.length - 1; i >= 0; i--) {
+    const d = mapData.decorations[i];
+    const r = (d.scale || 1) * 0.8;
+    if (Math.abs(col - d.x) < r && Math.abs(row - d.y) < r) return i;
+  }
+  return -1;
+}
+function hitTestZones(col, row) {
+  for (let i = mapData.zones.length - 1; i >= 0; i--) {
+    const z = mapData.zones[i];
+    if (col >= z.x && col < z.x + z.w && row >= z.y && row < z.y + z.h) return i;
+  }
+  return -1;
+}
+
+// =====================================================
+// DRAWING HELPERS
+// =====================================================
+function imgReady(img) {
+  return img && img.complete && img.naturalWidth > 0;
+}
+
+// Draw isometric diamond path (for clipping or stroke)
+function diamondPath(ctx, x, y, tw, th) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + tw/2, y + th/2);
+  ctx.lineTo(x, y + th);
+  ctx.lineTo(x - tw/2, y + th/2);
+  ctx.closePath();
+}
+
+// Draw a 3D isometric box (for elevated terrain)
+function drawIsoBox(ctx, x, y, tw, th, height, topColor, leftColor, rightColor) {
+  const h = height;
+  // Top face
+  ctx.fillStyle = topColor;
+  diamondPath(ctx, x, y - h, tw, th);
+  ctx.fill();
+  // Left face
+  ctx.fillStyle = leftColor;
+  ctx.beginPath();
+  ctx.moveTo(x - tw/2, y + th/2 - h);
+  ctx.lineTo(x, y + th - h);
+  ctx.lineTo(x, y + th);
+  ctx.lineTo(x - tw/2, y + th/2);
+  ctx.closePath();
+  ctx.fill();
+  // Right face
+  ctx.fillStyle = rightColor;
+  ctx.beginPath();
+  ctx.moveTo(x + tw/2, y + th/2 - h);
+  ctx.lineTo(x, y + th - h);
+  ctx.lineTo(x, y + th);
+  ctx.lineTo(x + tw/2, y + th/2);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// Darken a hex color
+function darkenColor(hex, factor) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.round(r*factor)},${Math.round(g*factor)},${Math.round(b*factor)})`;
+}
+
+// =====================================================
+// ISOMETRIC RENDERING ENGINE
+// =====================================================
+function renderLoop(ts) {
+  CTX.clearRect(0, 0, W, H);
+
+  // Dark background with subtle gradient
+  const bgGrad = CTX.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#0a1018');
+  bgGrad.addColorStop(1, '#060a14');
+  CTX.fillStyle = bgGrad;
+  CTX.fillRect(0, 0, W, H);
+
+  CTX.save();
+  CTX.scale(cam.z, cam.z);
+  CTX.translate(-cam.x, -cam.y);
+  CTX.imageSmoothingEnabled = true;
+  CTX.imageSmoothingQuality = 'high';
+
+  const off = getOriginOffset();
+
+  // ========== BASE MAP ==========
+  if (layerVis.basemap && imgReady(baseMapImg)) {
+    const b = getWorldBounds();
+    CTX.save();
+    CTX.globalAlpha = 0.9;
+    // Fit base map to isometric diamond bounds
+    CTX.drawImage(baseMapImg, off.x + b.minX, off.y - 4 * ELEV_PX, b.w, b.h);
+    CTX.restore();
+  }
+
+  // ========== TERRAIN TILES ==========
+  if (layerVis.terrain) {
+    renderTerrain(ts, off);
+  }
+
+  // ========== GRID OVERLAY ==========
+  if (showGridLines && (activeLayer === 'terrain' || activeLayer === 'basemap')) {
+    renderGrid(off);
+  }
+
+  // ========== ZONES ==========
+  if (layerVis.zones) renderZones(off);
+
+  // ========== FARMLAND ==========
+  if (layerVis.farmland) renderFarmland(ts, off);
+
+  // ========== DEPTH-SORTED OBJECTS (buildings + decorations mixed) ==========
+  renderDepthSortedObjects(ts, off);
+
+  // ========== HOVER HIGHLIGHT ==========
+  renderHover(off);
+
+  // ========== SELECTION ==========
+  renderSelection(ts, off);
+
+  // ========== ATMOSPHERE ==========
+  if (showAtmosphere) renderAtmosphere(off);
+
+  CTX.restore();
+
+  // ========== MINIMAP ==========
+  renderMinimap();
+
+  requestAnimationFrame(renderLoop);
+}
+
+// ---------- TERRAIN ----------
+function renderTerrain(ts, off) {
+  const hasBase = imgReady(baseMapImg);
+
+  for (let row = 0; row < MAP_H; row++) {
+    for (let col = 0; col < MAP_W; col++) {
+      const t = mapData.terrain[row]?.[col] ?? 0;
+      const elev = (showElevation && mapData.elevation[row]) ? (mapData.elevation[row][col] || 0) : 0;
+      const elevH = elev * ELEV_PX;
+      const s = isoToScreen(col, row);
+      const sx = off.x + s.x, sy = off.y + s.y;
+
+      // Resolve tile image — support custom asset string IDs and standard numeric IDs
+      let tImg = null;
+      let tColor = TERRAIN_COLORS[0];
+      let tSide = TERRAIN_SIDE[0];
+      if (typeof t === 'string' && t.startsWith('custom-')) {
+        // Custom asset terrain
+        tImg = isoImages['t-' + t];
+        if (!imgReady(tImg)) {
+          // Try to find via loadedAssetImages
+          const assetId = t.replace('custom-', '');
+          const asset = customAssets.find(a => a.id === assetId);
+          if (asset) tImg = loadedAssetImages[asset.url];
+        }
+        tColor = '#5a8048'; tSide = '#3a6030'; // fallback green
+      } else if (typeof t === 'number' && t >= 0 && t < TERRAIN_KEYS.length) {
+        const tKey = TERRAIN_KEYS[t];
+        tImg = isoImages['t-' + tKey];
+        tColor = TERRAIN_COLORS[t] || TERRAIN_COLORS[0];
+        tSide = TERRAIN_SIDE[t] || darkenColor(tColor, 0.6);
+      }
+
+      CTX.save();
+
+      if (elevH > 0) {
+        // Draw 3D elevated box
+        const rightCol = darkenColor(tColor, 0.75);
+        CTX.globalAlpha = hasBase ? 0.55 : 0.9;
+        drawIsoBox(CTX, sx, sy, TILE_W, TILE_H, elevH, tColor, tSide, rightCol);
+
+        // If has image, overlay on top face
+        if (imgReady(tImg)) {
+          CTX.globalAlpha = hasBase ? 0.45 : 0.7;
+          CTX.save();
+          diamondPath(CTX, sx, sy - elevH, TILE_W, TILE_H);
+          CTX.clip();
+          CTX.drawImage(tImg, sx - TILE_W/2, sy - elevH, TILE_W, TILE_H);
+          CTX.restore();
+        }
+      } else {
+        // Flat tile
+        if (imgReady(tImg)) {
+          CTX.globalAlpha = hasBase ? 0.5 : 0.95;
+          CTX.save();
+          diamondPath(CTX, sx, sy, TILE_W, TILE_H);
+          CTX.clip();
+          CTX.drawImage(tImg, sx - TILE_W/2, sy, TILE_W, TILE_H);
+          CTX.restore();
+        } else {
+          CTX.globalAlpha = hasBase ? 0.4 : 0.85;
+          CTX.fillStyle = tColor;
+          diamondPath(CTX, sx, sy, TILE_W, TILE_H);
+          CTX.fill();
+        }
+
+        // Edge highlight
+        if (showTerrainEdge) {
+          CTX.globalAlpha = 0.06;
+          CTX.strokeStyle = '#fff';
+          CTX.lineWidth = 0.5;
+          diamondPath(CTX, sx, sy, TILE_W, TILE_H);
+          CTX.stroke();
+        }
+      }
+
+      // Water shimmer (terrain type 2 or custom water assets)
+      const isWater = t === 2 || (typeof t === 'string' && customAssets.find(a => a.id === t.replace('custom-','') && a.category === 'water'));
+      if (isWater && showWaterAnim) {
+        CTX.globalAlpha = 0.06 + Math.sin(ts * 0.0015 + col * 0.6 + row * 0.4) * 0.04;
+        CTX.fillStyle = '#80d0ff';
+        diamondPath(CTX, sx, sy - elevH, TILE_W, TILE_H);
+        CTX.fill();
+        CTX.globalAlpha = 0.03;
+        CTX.strokeStyle = '#a0e8ff';
+        CTX.lineWidth = 1;
+        const cx = sx + Math.sin(ts * 0.001 + col) * 4;
+        CTX.beginPath(); CTX.moveTo(cx - 8, sy - elevH + TILE_H/2 - 2); CTX.lineTo(cx + 8, sy - elevH + TILE_H/2 + 2); CTX.stroke();
+      }
+
+      CTX.restore();
+    }
+  }
+}
+
+// ---------- GRID ----------
+function renderGrid(off) {
+  CTX.save();
+  CTX.globalAlpha = activeLayer === 'terrain' ? 0.1 : 0.03;
+  CTX.strokeStyle = '#a0ffc0'; CTX.lineWidth = 0.4;
+  for (let row = 0; row <= MAP_H; row++) {
+    const a = isoToScreen(0, row), b = isoToScreen(MAP_W, row);
+    CTX.beginPath(); CTX.moveTo(off.x + a.x, off.y + a.y); CTX.lineTo(off.x + b.x, off.y + b.y); CTX.stroke();
+  }
+  for (let col = 0; col <= MAP_W; col++) {
+    const a = isoToScreen(col, 0), b = isoToScreen(col, MAP_H);
+    CTX.beginPath(); CTX.moveTo(off.x + a.x, off.y + a.y); CTX.lineTo(off.x + b.x, off.y + b.y); CTX.stroke();
+  }
+  CTX.restore();
+}
+
+// ---------- ZONES ----------
+function renderZones(off) {
+  const isActive = activeLayer === 'zones';
+  mapData.zones.forEach(z => {
+    const corners = [
+      isoToScreen(z.x, z.y), isoToScreen(z.x + z.w, z.y),
+      isoToScreen(z.x + z.w, z.y + z.h), isoToScreen(z.x, z.y + z.h)
+    ];
+    CTX.save();
+    CTX.globalAlpha = isActive ? 0.18 : 0.06;
+    CTX.fillStyle = z.color;
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y);
+    corners.slice(1).forEach(c => CTX.lineTo(off.x + c.x, off.y + c.y));
+    CTX.closePath(); CTX.fill();
+    CTX.globalAlpha = isActive ? 0.5 : 0.15;
+    CTX.strokeStyle = z.color; CTX.lineWidth = 1.5;
+    CTX.stroke(); CTX.restore();
+    // Label
+    const center = isoToScreen(z.x + z.w/2, z.y + z.h/2);
+    CTX.save(); CTX.globalAlpha = isActive ? 0.8 : 0.35;
+    CTX.font = 'bold 9px system-ui'; CTX.textAlign = 'center'; CTX.fillStyle = z.color;
+    CTX.fillText(z.name, off.x + center.x, off.y + center.y);
+    CTX.restore();
+  });
+}
+
+// ---------- FARMLAND ----------
+function renderFarmland(ts, off) {
+  const isActive = activeLayer === 'farmland';
+  mapData.farmland.forEach(f => {
+    const ft = FARM_TYPES[f.type] || {};
+    const corners = [
+      isoToScreen(f.x, f.y), isoToScreen(f.x + f.w, f.y),
+      isoToScreen(f.x + f.w, f.y + f.h), isoToScreen(f.x, f.y + f.h)
+    ];
+
+    // Fill
+    CTX.save();
+    CTX.globalAlpha = isActive ? 0.25 : 0.12;
+    CTX.fillStyle = ft.fill || 'rgba(100,200,80,0.3)';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y);
+    corners.slice(1).forEach(c => CTX.lineTo(off.x + c.x, off.y + c.y));
+    CTX.closePath(); CTX.fill();
+
+    // Crop row pattern (subtle lines inside farmland)
+    CTX.globalAlpha = isActive ? 0.12 : 0.05;
+    CTX.strokeStyle = ft.color || '#8c6';
+    CTX.lineWidth = 0.6;
+    for (let i = 0; i < f.w * 2; i++) {
+      const t0 = f.x + i * 0.5, t1 = f.x + i * 0.5;
+      const a = isoToScreen(t0, f.y), b = isoToScreen(t1, f.y + f.h);
+      CTX.beginPath(); CTX.moveTo(off.x + a.x, off.y + a.y); CTX.lineTo(off.x + b.x, off.y + b.y); CTX.stroke();
+    }
+
+    // Border
+    CTX.globalAlpha = isActive ? 0.45 : 0.15;
+    CTX.strokeStyle = ft.color || '#8c6'; CTX.lineWidth = 1; CTX.setLineDash([4,3]);
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y);
+    corners.slice(1).forEach(c => CTX.lineTo(off.x + c.x, off.y + c.y));
+    CTX.closePath(); CTX.stroke(); CTX.setLineDash([]);
+    CTX.restore();
+
+    // Label
+    const center = isoToScreen(f.x + f.w/2, f.y + f.h/2);
+    CTX.save(); CTX.globalAlpha = 0.6; CTX.font = 'bold 8px system-ui'; CTX.textAlign = 'center'; CTX.fillStyle = '#fff';
+    CTX.fillText(`${f.name} ${f.w}x${f.h}`, off.x + center.x, off.y + center.y);
+    CTX.restore();
+  });
+}
+
+// ---------- DEPTH-SORTED OBJECTS ----------
+function renderDepthSortedObjects(ts, off) {
+  // Combine buildings and decorations, sort by (y+x) for isometric depth
+  const objects = [];
+
+  if (layerVis.buildings) {
+    mapData.buildings.forEach((b, i) => {
+      objects.push({ kind: 'building', data: b, index: i, depth: (b.y + b.h/2) + (b.x + b.w/2) });
+    });
+  }
+
+  if (layerVis.decorations) {
+    mapData.decorations.forEach((d, i) => {
+      objects.push({ kind: 'deco', data: d, index: i, depth: d.y + d.x });
+    });
+  }
+
+  objects.sort((a, b) => a.depth - b.depth);
+
+  objects.forEach(obj => {
+    if (obj.kind === 'building') renderBuilding(ts, off, obj.data, obj.index);
+    else renderDecoration(ts, off, obj.data, obj.index);
+  });
+}
+
+// ---------- BUILDING ----------
+function renderBuilding(ts, off, b, idx) {
+  const isCustom = b.type && b.type.startsWith('custom-');
+  const bt = isCustom ? { icon: '🏗️', height: 2 } : (BUILDING_TEMPLATES[b.type] || {});
+  const bw = b.w || 2, bh = b.h || 2;
+  const center = isoToScreen(b.x + bw/2, b.y + bh/2);
+  const bottom = isoToScreen(b.x + bw/2, b.y + bh);
+  const cx = off.x + center.x, cy = off.y + center.y;
+  const by = off.y + bottom.y;
+
+  // Get terrain elevation under building center
+  const tileRow = Math.floor(b.y + bh/2), tileCol = Math.floor(b.x + bw/2);
+  const elev = (showElevation && mapData.elevation[tileRow]?.[tileCol]) ? mapData.elevation[tileRow][tileCol] * ELEV_PX : 0;
+
+  // Try standard image first, then custom
+  let bImg = isoImages['b-' + b.type];
+  if (!imgReady(bImg) && isCustom) {
+    const assetId = b.type.replace('custom-', '');
+    const asset = customAssets.find(a => a.id === assetId);
+    if (asset) bImg = loadedAssetImages[asset.url];
+  }
+  if (imgReady(bImg)) {
+    const drawW = TILE_W * bw * 0.7;
+    const drawH = drawW * (bImg.height / bImg.width);
+    const drawX = cx - drawW / 2;
+    const drawY = cy - drawH * 0.75 - elev;
+
+    // Ground shadow
+    CTX.save(); CTX.globalAlpha = 0.12; CTX.fillStyle = '#000';
+    CTX.beginPath(); CTX.ellipse(cx + 4, by - elev + 3, drawW * 0.32, 6, 0, 0, Math.PI * 2); CTX.fill(); CTX.restore();
+
+    // Building sprite
+    CTX.drawImage(bImg, drawX, drawY, drawW, drawH);
+  } else {
+    // Procedural 3D building box
+    const buildH = (bt.height || 2) * TILE_H * 0.4;
+    const corners = [
+      isoToScreen(b.x, b.y), isoToScreen(b.x + bw, b.y),
+      isoToScreen(b.x + bw, b.y + bh), isoToScreen(b.x, b.y + bh)
+    ];
+
+    // Roof (top face, elevated)
+    CTX.save();
+    CTX.globalAlpha = 0.6;
+    CTX.fillStyle = '#d4a84a';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y - buildH - elev);
+    CTX.lineTo(off.x + corners[1].x, off.y + corners[1].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - buildH - elev);
+    CTX.lineTo(off.x + corners[3].x, off.y + corners[3].y - buildH - elev);
+    CTX.closePath(); CTX.fill();
+
+    // Left wall
+    CTX.fillStyle = '#b0883a';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[3].x, off.y + corners[3].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - elev);
+    CTX.lineTo(off.x + corners[3].x, off.y + corners[3].y - elev);
+    CTX.closePath(); CTX.fill();
+
+    // Right wall
+    CTX.fillStyle = '#c09840';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[1].x, off.y + corners[1].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - elev);
+    CTX.lineTo(off.x + corners[1].x, off.y + corners[1].y - elev);
+    CTX.closePath(); CTX.fill();
+
+    // Roof edge
+    CTX.globalAlpha = 0.3;
+    CTX.strokeStyle = '#fff'; CTX.lineWidth = 0.8;
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y - buildH - elev);
+    CTX.lineTo(off.x + corners[1].x, off.y + corners[1].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - buildH - elev);
+    CTX.lineTo(off.x + corners[3].x, off.y + corners[3].y - buildH - elev);
+    CTX.closePath(); CTX.stroke();
+
+    CTX.restore();
+
+    // Icon on roof
+    CTX.font = `${Math.min(20, TILE_W * 0.35)}px serif`; CTX.textAlign = 'center';
+    CTX.fillText(bt.icon || '🏗️', cx, cy - buildH - elev + 6);
+  }
+
+  // Name label
+  CTX.save(); CTX.font = 'bold 7px system-ui'; CTX.textAlign = 'center';
+  const labelY = by - elev + 10;
+  const label = b.name || bt.name || b.type;
+  CTX.fillStyle = 'rgba(0,0,0,.6)'; CTX.fillText(label, cx + 0.5, labelY + 0.5);
+  CTX.fillStyle = 'rgba(255,255,255,.7)'; CTX.fillText(label, cx, labelY);
+  CTX.restore();
+}
+
+// ---------- DECORATION ----------
+function renderDecoration(ts, off, d, idx) {
+  const isCustom = d.type && d.type.startsWith('custom-');
+  const dt = isCustom ? {} : (DECO_TEMPLATES[d.type] || {});
+  const s = isoToScreen(d.x, d.y);
+  const sx = off.x + s.x, sy = off.y + s.y;
+  const scale = d.scale || 1;
+
+  // Get terrain elevation
+  const tileRow = Math.floor(d.y), tileCol = Math.floor(d.x);
+  const elev = (showElevation && mapData.elevation[tileRow]?.[tileCol]) ? mapData.elevation[tileRow][tileCol] * ELEV_PX : 0;
+
+  // Try standard image then custom
+  let dImg = isoImages['d-' + d.type];
+  if (!imgReady(dImg) && isCustom) {
+    const assetId = d.type.replace('custom-', '');
+    const asset = customAssets.find(a => a.id === assetId);
+    if (asset) dImg = loadedAssetImages[asset.url];
+  }
+  const sway = (showTreeSway && (dt.sway || isCustom)) ? Math.sin(ts * 0.0007 + d.x * 0.5 + d.y * 0.3) * 2 : 0;
+
+  if (imgReady(dImg)) {
+    const sz = TILE_W * scale * 0.85;
+    // Shadow
+    CTX.save(); CTX.globalAlpha = 0.08; CTX.fillStyle = '#000';
+    CTX.beginPath(); CTX.ellipse(sx + sway * 0.5, sy + TILE_H * 0.25 - elev, sz * 0.22, 4, 0, 0, Math.PI * 2); CTX.fill(); CTX.restore();
+    // Sprite
+    CTX.drawImage(dImg, sx - sz / 2 + sway, sy - sz * 0.75 - elev, sz, sz);
+  } else {
+    CTX.font = `${Math.round(TILE_W * scale * 0.5)}px serif`; CTX.textAlign = 'center';
+    CTX.fillText(dt.icon || '🎄', sx + sway, sy - elev);
+  }
+
+  // Selection indicator
+  if (selectedObject?.layer === 'decorations' && selectedObject?.index === idx) {
+    CTX.save(); CTX.strokeStyle = '#00e676'; CTX.lineWidth = 1.5; CTX.setLineDash([4,3]); CTX.lineDashOffset = -ts * 0.01;
+    const r = TILE_W * scale * 0.4;
+    CTX.strokeRect(sx - r + sway, sy - r * 1.8 - elev, r * 2, r * 2.2);
+    CTX.setLineDash([]); CTX.restore();
+  }
+}
+
+// ---------- HOVER ----------
+function renderHover(off) {
+  const c = hoverTile.col, r = hoverTile.row;
+  if (c < 0 || c >= MAP_W || r < 0 || r >= MAP_H) return;
+  const elev = (showElevation && mapData.elevation[r]) ? (mapData.elevation[r][c] || 0) * ELEV_PX : 0;
+  const s = isoToScreen(c, r);
+
+  CTX.save(); CTX.translate(off.x + s.x, off.y + s.y - elev);
+  CTX.globalAlpha = 0.25; CTX.strokeStyle = '#00e676'; CTX.lineWidth = 1.5;
+  diamondPath(CTX, 0, 0, TILE_W, TILE_H);
+  CTX.stroke();
+  // Fill glow
+  CTX.globalAlpha = 0.06; CTX.fillStyle = '#00e676';
+  diamondPath(CTX, 0, 0, TILE_W, TILE_H);
+  CTX.fill();
+  CTX.restore();
+}
+
+// ---------- SELECTION ----------
+function renderSelection(ts, off) {
+  if (!selectedObject || selectedObject.layer === 'decorations') return;
+  const obj = mapData[selectedObject.layer]?.[selectedObject.index];
+  if (!obj || !obj.w || !obj.h) return;
+  const corners = [
+    isoToScreen(obj.x, obj.y), isoToScreen(obj.x + obj.w, obj.y),
+    isoToScreen(obj.x + obj.w, obj.y + obj.h), isoToScreen(obj.x, obj.y + obj.h)
+  ];
+  CTX.save();
+  const pulse = 0.5 + Math.sin(ts * 0.005) * 0.3;
+  CTX.strokeStyle = `rgba(0,230,118,${pulse})`; CTX.lineWidth = 2;
+  CTX.setLineDash([6,3]); CTX.lineDashOffset = -ts * 0.01;
+  CTX.beginPath();
+  CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y);
+  corners.slice(1).forEach(c => CTX.lineTo(off.x + c.x, off.y + c.y));
+  CTX.closePath(); CTX.stroke(); CTX.setLineDash([]); CTX.restore();
+}
+
+// ---------- ATMOSPHERE ----------
+function renderAtmosphere(off) {
+  const wb = getWorldBounds();
+  // Warm sunlight gradient (top-left to bottom-right)
+  CTX.save();
+  const sunGrad = CTX.createLinearGradient(off.x + wb.minX, off.y, off.x + wb.maxX, off.y + wb.h);
+  sunGrad.addColorStop(0, 'rgba(255,240,200,0.04)');
+  sunGrad.addColorStop(0.5, 'rgba(255,255,255,0.01)');
+  sunGrad.addColorStop(1, 'rgba(0,0,30,0.03)');
+  CTX.fillStyle = sunGrad;
+  CTX.fillRect(off.x + wb.minX - 20, off.y - 50, wb.w + 40, wb.h + 70);
+  CTX.restore();
+}
+
+// =====================================================
+// MINIMAP
+// =====================================================
+function renderMinimap() {
+  const mc = document.getElementById('minimapCv');
+  const mx = mc.getContext('2d');
+  mx.imageSmoothingEnabled = true;
+  mx.fillStyle = '#0a1018'; mx.fillRect(0, 0, 180, 100);
+
+  const wb = getWorldBounds();
+  const off = getOriginOffset();
+  const sc = Math.min(170 / wb.w, 90 / wb.h);
+  const ox = 5 + (170 - wb.w * sc) / 2 - wb.minX * sc;
+  const oy = 5;
+
+  // Terrain diamonds
+  for (let row = 0; row < MAP_H; row++) for (let col = 0; col < MAP_W; col++) {
+    const t = mapData.terrain[row]?.[col] ?? 0;
+    const s = isoToScreen(col, row);
+    // Resolve color for custom terrain
+    let tCol = TERRAIN_COLORS[0];
+    if (typeof t === 'number') { tCol = TERRAIN_COLORS[t] || TERRAIN_COLORS[0]; }
+    else if (typeof t === 'string') {
+      const assetId = t.replace('custom-', '');
+      const asset = customAssets.find(a => a.id === assetId);
+      if (asset) {
+        if (asset.category === 'water') tCol = '#3888b8';
+        else if (asset.category === 'farmland') tCol = '#609858';
+        else tCol = '#5a9838';
+      }
+    }
+    mx.fillStyle = tCol;
+    mx.globalAlpha = 0.6;
+    const px = ox + (off.x + s.x) * sc, py = oy + (off.y + s.y) * sc;
+    const tw = TILE_W * sc / 2, th = TILE_H * sc / 2;
+    mx.beginPath(); mx.moveTo(px, py); mx.lineTo(px + tw, py + th); mx.lineTo(px, py + th * 2); mx.lineTo(px - tw, py + th); mx.closePath(); mx.fill();
+  }
+
+  // Buildings
+  mx.globalAlpha = 0.8; mx.fillStyle = '#d4a84a';
+  mapData.buildings.forEach(b => {
+    const s = isoToScreen(b.x + (b.w||2)/2, b.y + (b.h||2)/2);
+    const px = ox + (off.x + s.x) * sc, py = oy + (off.y + s.y) * sc;
+    mx.beginPath(); mx.arc(px, py, 2.5, 0, Math.PI * 2); mx.fill();
+  });
+
+  // Decorations
+  mx.globalAlpha = 0.5; mx.fillStyle = '#69f0ae';
+  mapData.decorations.forEach(d => {
+    const s = isoToScreen(d.x, d.y);
+    mx.beginPath(); mx.arc(ox + (off.x + s.x) * sc, oy + (off.y + s.y) * sc, 1.5, 0, Math.PI * 2); mx.fill();
+  });
+
+  // Camera viewport
+  mx.globalAlpha = 1; mx.strokeStyle = 'rgba(0,230,118,.6)'; mx.lineWidth = 1;
+  mx.strokeRect(ox + cam.x * sc, oy + cam.y * sc, (W / cam.z) * sc, (H / cam.z) * sc);
+}
+
+// =====================================================
+// AI GENERATE
+// =====================================================
+function openAIGenerate(category) {
+  const catNames = { terrain: '地形', building: '建筑', decoration: '装饰' };
+  const catExamples = {
+    terrain: '如：鹅卵石小路、樱花草地、秋天落叶',
+    building: '如：中式茶馆、蜂蜜工坊、太阳能温室',
+    decoration: '如：竹林、石灯笼、水车、稻草人'
+  };
+  const desc = prompt(`🤖 AI 生成 ${catNames[category]}素材\n\n描述:\n${catExamples[category]}\n\n生成45度等距2.5D手绘风格素材`);
+  if (!desc || !desc.trim()) return;
+  fetch('/api/ai/generate-asset', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: category, description: desc.trim() })
+  }).then(r => r.json()).then(data => {
+    if (data.success && navigator.clipboard) {
+      navigator.clipboard.writeText(data.prompt).then(() => {
+        toast('success', '📋 AI提示词已复制！用 Banana Pro 生成');
+      });
+    }
+  }).catch(() => toast('error', 'AI请求失败'));
+}
+
+// =====================================================
+// ASSET IMPORT SYSTEM
+// =====================================================
+let _importCategory = 'terrain';
+let _importPendingFiles = []; // { file, dataUrl, name }
+let _importSelectedExisting = []; // asset IDs from library
+let _browserFilter = 'all';
+
+function openAssetImport(category) {
+  _importCategory = category || 'terrain';
+  _importPendingFiles = [];
+  _importSelectedExisting = [];
+  document.getElementById('importCategory').value = _importCategory;
+  const catLabels = { terrain: '地形瓦片', building: '建筑物', decoration: '装饰物', farmland: '农田', water: '水域' };
+  document.getElementById('importCategoryLabel').textContent = catLabels[_importCategory] || '';
+  // Set default tile dimensions based on category
+  document.getElementById('importTileW').value = (_importCategory === 'terrain') ? TILE_W : 128;
+  document.getElementById('importTileH').value = (_importCategory === 'terrain') ? TILE_H : 128;
+  document.getElementById('importName').value = '';
+  document.getElementById('importTags').value = '';
+  // Reset preview
+  document.getElementById('importPreviewGrid').style.display = 'none';
+  document.getElementById('importPreviewGrid').innerHTML = '';
+  document.getElementById('importFields').style.display = 'none';
+  document.getElementById('uploadConfirmBtn').style.display = 'none';
+  document.getElementById('importConfirmBtn').style.display = 'none';
+  document.getElementById('importFileInput').value = '';
+  // Render existing asset browser
+  renderAssetBrowser();
+  document.getElementById('importOverlay').classList.add('open');
+}
+
+function closeImportDialog() {
+  document.getElementById('importOverlay').classList.remove('open');
+  _importPendingFiles = [];
+  _importSelectedExisting = [];
+}
+
+// Drag & drop on drop zone
+const dropZone = document.getElementById('importDropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) handleImportFiles(e.dataTransfer.files);
+});
+
+function handleImportFiles(fileList) {
+  if (!fileList || !fileList.length) return;
+  _importPendingFiles = [];
+  const grid = document.getElementById('importPreviewGrid');
+  grid.innerHTML = ''; grid.style.display = 'grid';
+  document.getElementById('importFields').style.display = 'grid';
+  document.getElementById('uploadConfirmBtn').style.display = '';
+  document.getElementById('uploadCount').textContent = fileList.length;
+
+  Array.from(fileList).forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      _importPendingFiles.push({ file, dataUrl, name: file.name.replace(/\.[^.]+$/, '') });
+      const card = document.createElement('div');
+      card.className = 'preview-card selected';
+      card.innerHTML = `<img src="${dataUrl}"><div class="pc-label">${file.name}</div><div class="pc-check">✓</div>`;
+      card.onclick = () => { card.classList.toggle('selected'); updateUploadCount(); };
+      grid.appendChild(card);
+      // Auto-fill name if single file
+      if (fileList.length === 1) {
+        document.getElementById('importName').value = file.name.replace(/\.[^.]+$/, '');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function updateUploadCount() {
+  const n = document.querySelectorAll('#importPreviewGrid .preview-card.selected').length;
+  document.getElementById('uploadCount').textContent = n;
+}
+
+async function uploadAndImport() {
+  const selected = document.querySelectorAll('#importPreviewGrid .preview-card.selected');
+  if (!selected.length) { toast('error', '请选择要上传的文件'); return; }
+  const category = document.getElementById('importCategory').value;
+  const baseName = document.getElementById('importName').value.trim();
+  const tileW = parseInt(document.getElementById('importTileW').value) || 64;
+  const tileH = parseInt(document.getElementById('importTileH').value) || 32;
+  const tags = document.getElementById('importTags').value;
+
+  let uploaded = 0;
+  for (let i = 0; i < _importPendingFiles.length; i++) {
+    const pf = _importPendingFiles[i];
+    // Check if the corresponding preview card is selected
+    const cards = document.querySelectorAll('#importPreviewGrid .preview-card');
+    if (cards[i] && !cards[i].classList.contains('selected')) continue;
+
+    const form = new FormData();
+    form.append('image', pf.file);
+    form.append('name', _importPendingFiles.length === 1 ? (baseName || pf.name) : `${baseName || category} ${String(uploaded+1).padStart(2,'0')}`);
+    form.append('category', category);
+    form.append('tileWidth', tileW);
+    form.append('tileHeight', tileH);
+    form.append('tags', tags);
+
+    try {
+      const resp = await fetch('/api/editor/map-assets', { method: 'POST', body: form });
+      const data = await resp.json();
+      if (data.success && data.asset) {
+        // Immediately load the new asset image into our palette
+        const img = new Image(); img.src = data.asset.url;
+        loadedAssetImages[data.asset.url] = img;
+        customAssets.push(data.asset);
+        // Also add to isoImages if it's a recognized type
+        addAssetToIsoImages(data.asset);
+        uploaded++;
+      }
+    } catch (e) { console.warn('Upload failed:', e); }
+  }
+
+  if (uploaded > 0) {
+    toast('success', `✅ 已上传 ${uploaded} 个素材`);
+    renderPalettes();
+    renderCustomAssetLibs();
+    closeImportDialog();
+  } else {
+    toast('error', '上传失败');
+  }
+}
+
+function addAssetToIsoImages(asset) {
+  const img = new Image(); img.src = asset.url;
+  if (asset.category === 'terrain') {
+    // Use asset ID as terrain key for custom terrains
+    isoImages['t-custom-' + asset.id] = img;
+  } else if (asset.category === 'building') {
+    isoImages['b-custom-' + asset.id] = img;
+  } else if (asset.category === 'decoration') {
+    isoImages['d-custom-' + asset.id] = img;
+  } else if (asset.category === 'farmland' || asset.category === 'water') {
+    isoImages['t-custom-' + asset.id] = img;
+  }
+}
+
+// Toggle asset browser visibility
+function toggleAssetBrowser() {
+  const b = document.getElementById('assetBrowser');
+  const a = document.getElementById('assetBrowserArrow');
+  if (b.style.display === 'none') { b.style.display = ''; a.textContent = '▲'; renderAssetBrowser(); }
+  else { b.style.display = 'none'; a.textContent = '▼'; }
+}
+
+function filterBrowserAssets(cat) { _browserFilter = cat; renderAssetBrowser(); }
+
+function renderAssetBrowser() {
+  const grid = document.getElementById('assetBrowserGrid');
+  if (!grid) return;
+  const filtered = _browserFilter === 'all' ? customAssets : customAssets.filter(a => a.category === _browserFilter);
+  grid.innerHTML = filtered.map(a => {
+    const sel = _importSelectedExisting.includes(a.id) ? ' selected' : '';
+    return `<div class="preview-card${sel}" onclick="toggleBrowserSelect('${a.id}')">
+      <img src="${a.url}" loading="lazy"><div class="pc-label">${a.name}</div><div class="pc-check">✓</div>
+    </div>`;
+  }).join('') || '<div style="grid-column:span 4;font-size:9px;color:#3a4a5e;text-align:center;padding:16px">暂无素材</div>';
+  // Show import button if any selected
+  const n = _importSelectedExisting.length;
+  document.getElementById('importConfirmBtn').style.display = n > 0 ? '' : 'none';
+  document.getElementById('importCount').textContent = n;
+}
+
+function toggleBrowserSelect(id) {
+  const idx = _importSelectedExisting.indexOf(id);
+  if (idx >= 0) _importSelectedExisting.splice(idx, 1);
+  else _importSelectedExisting.push(id);
+  renderAssetBrowser();
+}
+
+function confirmImport() {
+  if (!_importSelectedExisting.length) return;
+  const category = document.getElementById('importCategory').value;
+  let applied = 0;
+  _importSelectedExisting.forEach(id => {
+    const asset = customAssets.find(a => a.id === id);
+    if (!asset) return;
+    addAssetToIsoImages(asset);
+    applied++;
+  });
+  if (applied > 0) {
+    toast('success', `✅ 已导入 ${applied} 个素材到调色板`);
+    renderPalettes();
+    renderCustomAssetLibs();
+  }
+  closeImportDialog();
+}
+
+// =====================================================
+// CUSTOM ASSET LIBRARY IN PALETTES
+// =====================================================
+function renderCustomAssetLibs() {
+  renderCustomLib('customTerrainLib', 'terrain', selectCustomTerrain);
+  renderCustomLib('customBuildingLib', 'building', selectCustomBuilding);
+  renderCustomLib('customDecoLib', 'decoration', selectCustomDeco);
+  renderCustomLib('customFarmLib', 'farmland', selectCustomFarm);
+}
+
+function renderCustomLib(containerId, category, clickHandler) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const filtered = customAssets.filter(a => a.category === category || (category === 'terrain' && a.category === 'water'));
+  if (!filtered.length) { container.innerHTML = ''; return; }
+  let html = `<div class="asset-lib-header"><span>📦 自定义素材 (${filtered.length})</span></div>`;
+  html += '<div class="asset-grid">';
+  filtered.forEach(a => {
+    const isActive = (category === 'terrain' && activeTerrain === 'custom-' + a.id) ||
+                     (category === 'building' && activeBuilding === 'custom-' + a.id) ||
+                     (category === 'decoration' && activeDeco === 'custom-' + a.id) ||
+                     (category === 'farmland' && activeFarm === 'custom-' + a.id);
+    html += `<div class="ag-item${isActive ? ' active' : ''}" onclick="${clickHandler.name}('${a.id}')" title="${a.name}">
+      <img src="${a.url}" loading="lazy"><div class="ag-name">${a.name}</div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function selectCustomTerrain(assetId) {
+  activeTerrain = 'custom-' + assetId;
+  renderPalettes();
+  renderCustomAssetLibs();
+}
+function selectCustomBuilding(assetId) {
+  activeBuilding = 'custom-' + assetId;
+  renderPalettes();
+  renderCustomAssetLibs();
+}
+function selectCustomDeco(assetId) {
+  activeDeco = 'custom-' + assetId;
+  renderPalettes();
+  renderCustomAssetLibs();
+}
+function selectCustomFarm(assetId) {
+  activeFarm = 'custom-' + assetId;
+  renderPalettes();
+  renderCustomAssetLibs();
+}
+
+// =====================================================
+// TOAST
+// =====================================================
+function toast(type, msg) {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div'); el.className = 'toast ' + type; el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// =====================================================
+// INIT
+// =====================================================
+function resize() {
+  const wrap = document.getElementById('canvasWrap');
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  CVS.width = W; CVS.height = H;
+}
+
+async function init() {
+  resize();
+  window.addEventListener('resize', resize);
+  setupInput();
+  await loadAssets();
+  await loadMap();
+  updateUI();
+  renderCustomAssetLibs();
+  resetView();
+  requestAnimationFrame(renderLoop);
+  document.getElementById('statusText').textContent = `${MAP_W}x${MAP_H} 等距地图就绪 | ${customAssets.length} 素材`;
+}
+
+init();
+</script>
+</html>

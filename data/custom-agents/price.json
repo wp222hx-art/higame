@@ -1,0 +1,23 @@
+{
+  "id": "price",
+  "name": "定价分析",
+  "icon": "💹",
+  "dept": "销售部",
+  "tier": 3,
+  "sprite": "price",
+  "zone": "market",
+  "color": "#ff9100",
+  "skills": [
+    "pricing-strategy",
+    "cost-analysis",
+    "market-analysis"
+  ],
+  "description": "产品定价策略制定和调整",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-price.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.398Z",
+  "updatedAt": "2026-03-27T17:38:57.681Z"
+}

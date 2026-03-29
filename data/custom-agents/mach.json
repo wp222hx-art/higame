@@ -1,0 +1,22 @@
+{
+  "id": "mach",
+  "name": "农机专家",
+  "icon": "🚜",
+  "dept": "种植部",
+  "tier": 3,
+  "sprite": "mach",
+  "zone": "fields-b",
+  "color": "#00e676",
+  "skills": [
+    "resource-check",
+    "team-planting"
+  ],
+  "description": "农业机械管理和调度",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-mach.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.398Z",
+  "updatedAt": "2026-03-27T17:14:32.656Z"
+}

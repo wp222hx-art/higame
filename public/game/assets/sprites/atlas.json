@@ -1,0 +1,67 @@
+{
+  "version": "4.0",
+  "style": "Q-version chibi pixel art with dark outlines, 3-shade coloring, anime eyes, warm palette",
+  "characters": [
+    "chief",
+    "farmer",
+    "tech",
+    "sales",
+    "delivery",
+    "livestream",
+    "inspector",
+    "finance"
+  ],
+  "crops": [
+    "rice",
+    "wheat",
+    "tomato",
+    "cabbage",
+    "strawberry",
+    "orange",
+    "pepper",
+    "lotus",
+    "tea",
+    "corn"
+  ],
+  "buildings": [
+    "village-hall",
+    "market",
+    "warehouse",
+    "greenhouse",
+    "weather-station",
+    "lab",
+    "training",
+    "logistics",
+    "livestream"
+  ],
+  "terrains": [
+    "grass",
+    "dirt",
+    "water",
+    "paddy",
+    "stone",
+    "sand"
+  ],
+  "icons": [
+    "coin",
+    "grain",
+    "star"
+  ],
+  "charSheet": {
+    "frameW": 32,
+    "frameH": 32,
+    "cols": 3,
+    "rows": 4,
+    "desc": "3 frames(idle,walk_a,walk_b) x 4 dirs(down,left,up,right)",
+    "style": "Big chibi head (60% body height), round face, 2px anime eyes with highlights, blush marks, outlined"
+  },
+  "cropSheet": {
+    "frameW": 32,
+    "frameH": 32,
+    "stages": 4,
+    "desc": "4 growth stages: seedling, growing, flowering, mature with fruit/dewdrops"
+  },
+  "buildingSize": 64,
+  "terrainSize": 48,
+  "aiSpec": "All sprites: transparent RGBA PNG, dark outline style, 3-shade shading (highlight/base/shadow). Characters: 96x128 spritesheet. Crops: 128x32. Buildings: 64x64. Terrain: 48x48 tileable."
+}

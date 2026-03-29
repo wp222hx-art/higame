@@ -1,0 +1,22 @@
+{
+  "id": "soil",
+  "name": "土壤专家",
+  "icon": "🧪",
+  "dept": "种植部",
+  "tier": 3,
+  "sprite": "soil",
+  "zone": "fields-a",
+  "color": "#00e676",
+  "skills": [
+    "soil-analysis",
+    "fertilizer-plan"
+  ],
+  "description": "专注土壤质量检测和改良方案",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-soil.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.397Z",
+  "updatedAt": "2026-03-27T17:26:27.803Z"
+}

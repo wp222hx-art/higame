@@ -1,0 +1,20 @@
+{
+  "id": "custom-94lysq",
+  "name": "种植师孙小小",
+  "icon": "🌾",
+  "dept": "种植部",
+  "tier": 3,
+  "zone": "warehouse",
+  "color": "#00e676",
+  "skills": [
+    "pest-alert",
+    "irrigation-plan"
+  ],
+  "description": "",
+  "sprite": "custom-94lysq",
+  "scale": 0.5,
+  "frameSize": 298,
+  "frameHeight": 300,
+  "spriteUrl": "/game/assets/sprites/custom/char-custom-94lysq.png",
+  "createdAt": "2026-03-27T16:39:31.424Z"
+}

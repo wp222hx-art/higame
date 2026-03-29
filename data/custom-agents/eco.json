@@ -1,0 +1,23 @@
+{
+  "id": "eco",
+  "name": "生态部长",
+  "icon": "🌿",
+  "dept": "生态部",
+  "tier": 2,
+  "sprite": "eco",
+  "zone": "pond",
+  "color": "#69f0ae",
+  "skills": [
+    "organic-audit",
+    "rotation-plan",
+    "soil-analysis"
+  ],
+  "description": "生态环境保护和有机发展",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-eco.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.399Z",
+  "updatedAt": "2026-03-27T17:46:41.887Z"
+}

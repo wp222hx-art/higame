@@ -1,0 +1,22 @@
+{
+  "id": "logi",
+  "name": "物流专家",
+  "icon": "🚛",
+  "dept": "销售部",
+  "tier": 3,
+  "sprite": "logi",
+  "zone": "logistics",
+  "color": "#ff9100",
+  "skills": [
+    "resource-check",
+    "team-sales"
+  ],
+  "description": "物流配送方案和路线优化",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-logi.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.399Z",
+  "updatedAt": "2026-03-27T17:37:59.097Z"
+}

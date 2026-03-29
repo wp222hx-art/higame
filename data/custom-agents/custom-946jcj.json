@@ -1,0 +1,20 @@
+{
+  "id": "custom-946jcj",
+  "name": "种植郭老师",
+  "icon": "🌾",
+  "dept": "种植部",
+  "tier": 3,
+  "zone": "fields-a",
+  "color": "#00e676",
+  "skills": [
+    "crop-plan",
+    "soil-analysis"
+  ],
+  "description": "",
+  "sprite": "custom-946jcj",
+  "scale": 0.5,
+  "frameSize": 298,
+  "frameHeight": 300,
+  "spriteUrl": "/game/assets/sprites/custom/char-custom-946jcj.png",
+  "createdAt": "2026-03-27T16:27:31.279Z"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "qual",
+  "name": "质检部长",
+  "icon": "🔍",
+  "dept": "质检部",
+  "tier": 2,
+  "sprite": "qual",
+  "zone": "lab",
+  "color": "#ef5350",
+  "skills": [
+    "quality-check",
+    "organic-audit",
+    "food-safety-review"
+  ],
+  "description": "产品质量把控和认证管理",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-qual.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.399Z",
+  "updatedAt": "2026-03-27T17:43:40.042Z"
+}

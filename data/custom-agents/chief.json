@@ -1,0 +1,23 @@
+{
+  "id": "chief",
+  "name": "村长",
+  "icon": "🏛️",
+  "dept": "领导层",
+  "tier": 1,
+  "sprite": "chief",
+  "zone": "village-hall",
+  "color": "#ffd740",
+  "skills": [
+    "seasonal-plan",
+    "budget-review",
+    "resource-check"
+  ],
+  "description": "全村最高管理者，统筹规划村庄发展",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-chief.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 2.2,
+  "createdAt": "2026-03-27T17:13:17.397Z",
+  "updatedAt": "2026-03-28T04:06:22.327Z"
+}

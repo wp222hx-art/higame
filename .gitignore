@@ -111,6 +111,10 @@ node_modules/
 credentials.json
 secrets.json
 
+# === Game Save Data ===
+data/saves/
+data/game-save.json
+
 # === Large Binary Assets (use Git LFS instead) ===
 # Uncomment and configure with Git LFS for your project:
 # *.png

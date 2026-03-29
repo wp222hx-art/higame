@@ -1,0 +1,22 @@
+{
+  "id": "whole",
+  "name": "批发专家",
+  "icon": "🏪",
+  "dept": "销售部",
+  "tier": 3,
+  "sprite": "whole",
+  "zone": "warehouse",
+  "color": "#ff9100",
+  "skills": [
+    "channel-plan",
+    "team-sales"
+  ],
+  "description": "批发渠道开拓和维护",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-whole.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.399Z",
+  "updatedAt": "2026-03-27T17:41:04.258Z"
+}

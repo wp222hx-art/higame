@@ -1,0 +1,22 @@
+{
+  "id": "seed",
+  "name": "种子专家",
+  "icon": "🌾",
+  "dept": "种植部",
+  "tier": 3,
+  "sprite": "seed",
+  "zone": "fields-b",
+  "color": "#00e676",
+  "skills": [
+    "seed-select",
+    "crop-plan"
+  ],
+  "description": "优良品种筛选和培育",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-seed.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.397Z",
+  "updatedAt": "2026-03-27T17:25:14.647Z"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "agritech",
+  "name": "农技总监",
+  "icon": "🔬",
+  "dept": "领导层",
+  "tier": 1,
+  "sprite": "agritech",
+  "zone": "lab",
+  "color": "#ffd740",
+  "skills": [
+    "soil-analysis",
+    "crop-plan",
+    "pest-alert",
+    "seed-select"
+  ],
+  "description": "农业技术总负责人，指导科学种植",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-agritech.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.397Z",
+  "updatedAt": "2026-03-28T04:05:24.269Z"
+}
