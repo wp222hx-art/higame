@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SYNAPSE-beta — 角色编辑器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#080c18;font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;color:#e0e6ed}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(0,230,118,.15);border-radius:3px}
+
+/* Layout */
+.app{display:flex;height:100vh}
+.sidebar{width:320px;background:rgba(6,10,22,.98);border-right:1px solid rgba(0,230,118,.08);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.preview-area{flex:1;display:flex;align-items:center;justify-content:center;position:relative;background:radial-gradient(circle at 50% 50%,rgba(0,230,118,.02),transparent 70%)}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(6,10,22,.98);border-bottom:1px solid rgba(0,230,118,.06)}
+.header h1{font-size:16px;font-weight:900;letter-spacing:2px;display:flex;align-items:center;gap:8px}
+.header h1 span{background:linear-gradient(135deg,#00e676,#69f0ae);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-actions{display:flex;gap:8px}
+
+/* Buttons */
+.btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(0,230,118,.15);background:rgba(0,230,118,.05);color:#69f0ae;font-size:12px;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.btn:hover{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.3);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:rgba(0,230,118,.15);border-color:#00e676;color:#00e676}
+.btn.primary:hover{background:rgba(0,230,118,.25);box-shadow:0 0 20px rgba(0,230,118,.15)}
+.btn.danger{border-color:rgba(239,83,80,.2);color:#ef5350;background:rgba(239,83,80,.05)}
+.btn.danger:hover{background:rgba(239,83,80,.12)}
+.btn:disabled{opacity:.3;pointer-events:none}
+.btn-sm{padding:5px 10px;font-size:10px}
+
+/* Sidebar sections */
+.sb-section{padding:14px 16px;border-bottom:1px solid rgba(0,230,118,.04)}
+.sb-title{font-size:10px;font-weight:800;color:#3a5a4e;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sb-title em{font-style:normal;background:linear-gradient(135deg,#00e676,#69f0ae);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Steps */
+.steps{display:flex;gap:2px;margin-bottom:14px;padding:0 16px;padding-top:12px}
+.step{flex:1;text-align:center;padding:8px 4px;border-radius:8px;font-size:9px;font-weight:800;color:#2a3a4e;background:rgba(255,255,255,.01);border:1px solid rgba(255,255,255,.03);transition:.3s;cursor:pointer;position:relative}
+.step.active{color:#00e676;background:rgba(0,230,118,.06);border-color:rgba(0,230,118,.2)}
+.step.done{color:#69f0ae;background:rgba(0,230,118,.03);border-color:rgba(0,230,118,.1)}
+.step .sn{font-size:14px;display:block;margin-bottom:2px}
+.step.active::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:2px;background:#00e676;border-radius:1px}
+
+/* Scroll body */
+.sb-body{flex:1;overflow-y:auto;padding-bottom:80px}
+
+/* Upload zone */
+.upload-zone{border:2px dashed rgba(0,230,118,.12);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:.3s;position:relative;overflow:hidden}
+.upload-zone:hover{border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.03)}
+.upload-zone.dragover{border-color:#00e676;background:rgba(0,230,118,.08)}
+.upload-zone.has-image{padding:12px;border-style:solid;border-color:rgba(0,230,118,.2)}
+.uz-icon{font-size:36px;margin-bottom:6px;opacity:.4}
+.uz-text{font-size:11px;color:#4a5a6e}
+.uz-hint{font-size:9px;color:#2a3a4e;margin-top:4px}
+#uploadInput{display:none}
+.upload-preview{max-width:100%;max-height:180px;border-radius:8px;image-rendering:pixelated}
+
+/* Processing overlay */
+.processing{position:absolute;inset:0;background:rgba(8,12,24,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;border-radius:10px}
+.processing.hidden{display:none}
+.spinner{width:32px;height:32px;border:3px solid rgba(0,230,118,.1);border-top-color:#00e676;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-text{font-size:10px;color:#4a5a6e;margin-top:8px}
+
+/* Sprite preview grid */
+.sprite-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:10px}
+.sprite-cell{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:6px;display:flex;align-items:center;justify-content:center;aspect-ratio:1;overflow:hidden}
+.sprite-cell canvas{image-rendering:pixelated;width:100%;height:100%}
+.sprite-cell.active{border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.04)}
+
+/* Direction labels */
+.dir-labels{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.dir-label{font-size:9px;text-align:center;padding:4px;border-radius:5px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.03);color:#4a5a6e;font-weight:700}
+.dir-label.active{color:#00e676;border-color:rgba(0,230,118,.2)}
+
+/* Walk animation preview */
+.walk-preview{display:flex;align-items:center;justify-content:center;margin:16px 0;gap:20px}
+.walk-canvas-wrap{min-width:120px;min-height:160px;background:rgba(0,0,0,.2);border-radius:12px;border:1px solid rgba(0,230,118,.06);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:8px}
+.walk-canvas-wrap canvas{image-rendering:pixelated}
+.walk-controls{display:flex;flex-direction:column;gap:6px;align-items:center}
+.walk-dir-grid{display:grid;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px);gap:2px}
+.walk-dir-btn{background:rgba(0,230,118,.04);border:1px solid rgba(0,230,118,.08);border-radius:6px;color:#4a5a6e;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.walk-dir-btn:hover{background:rgba(0,230,118,.1);color:#00e676}
+.walk-dir-btn.active{background:rgba(0,230,118,.15);border-color:#00e676;color:#00e676}
+.walk-dir-btn.empty{visibility:hidden}
+.speed-slider{width:100px;accent-color:#00e676;margin-top:4px}
+
+/* Form fields */
+.field{margin-bottom:10px}
+.field label{display:block;font-size:9px;font-weight:800;color:#3a5a4e;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase}
+.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:7px;padding:8px 10px;color:#e0e6ed;font-size:12px;font-family:inherit;outline:none;transition:.2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(0,230,118,.3);background:rgba(0,230,118,.02)}
+.field textarea{resize:vertical;min-height:60px}
+.field select{cursor:pointer}
+.field select option{background:#0a0e1a;color:#e0e6ed}
+
+/* Skill tags */
+.skill-pool{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.skill-tag{padding:4px 10px;border-radius:14px;font-size:10px;font-weight:700;cursor:pointer;transition:.2s;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);color:#5a6a7e;user-select:none}
+.skill-tag:hover{border-color:rgba(0,230,118,.15);color:#8a98a8}
+.skill-tag.selected{background:rgba(0,230,118,.08);border-color:rgba(0,230,118,.25);color:#00e676}
+.skill-tag .si{margin-right:3px}
+.skill-category{font-size:8px;font-weight:800;color:#2a3a4e;margin:8px 0 4px;text-transform:uppercase;letter-spacing:1px}
+
+/* Agent preview card */
+.agent-card{background:rgba(14,24,44,.4);border:1px solid rgba(0,230,118,.08);border-radius:12px;padding:14px;margin-top:10px}
+.agent-card .ac-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.agent-card .ac-avatar{width:64px;height:64px;border-radius:10px;background:rgba(0,230,118,.03);border:1px solid rgba(0,230,118,.08);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.agent-card .ac-avatar canvas{image-rendering:pixelated}
+.agent-card .ac-info h3{font-size:14px;font-weight:900}
+.agent-card .ac-info p{font-size:10px;color:#4a5a6e;margin-top:2px}
+.agent-card .ac-skills{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+.agent-card .ac-skill{font-size:8px;padding:2px 7px;border-radius:10px;background:rgba(0,230,118,.05);border:1px solid rgba(0,230,118,.1);color:#69f0ae;font-weight:700}
+.agent-card .ac-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:10px}
+.agent-card .ac-stat{text-align:center;padding:6px;background:rgba(255,255,255,.02);border-radius:6px;border:1px solid rgba(255,255,255,.03)}
+.agent-card .ac-stat .v{font-size:14px;font-weight:900;color:#ffd740}
+.agent-card .ac-stat .l{font-size:7px;color:#3a4a5e;text-transform:uppercase}
+
+/* Big preview canvas */
+#bigPreview,#bigWalkCanvas{image-rendering:pixelated;image-rendering:crisp-edges;object-fit:contain}
+
+/* Toast */
+.toast-container{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.toast{padding:10px 16px;border-radius:9px;font-size:11px;font-weight:700;animation:slideIn .3s ease-out;backdrop-filter:blur(8px)}
+.toast.success{background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.2);color:#69f0ae}
+.toast.error{background:rgba(239,83,80,.12);border:1px solid rgba(239,83,80,.2);color:#ef5350}
+.toast.info{background:rgba(66,165,245,.12);border:1px solid rgba(66,165,245,.2);color:#64b5f6}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* Checkerboard bg for preview */
+.checker-bg{background-image:repeating-conic-gradient(rgba(255,255,255,.03) 0% 25%,rgba(255,255,255,.06) 0% 50%);background-size:16px 16px}
+
+/* Saved agents list */
+.saved-agent{background:rgba(14,24,44,.3);border:1px solid rgba(20,40,70,.3);border-radius:8px;padding:8px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:.2s}
+.saved-agent:hover{border-color:rgba(0,230,118,.15);background:rgba(0,230,118,.02)}
+.saved-agent.editing{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.06);box-shadow:0 0 12px rgba(0,230,118,.08)}
+.saved-agent canvas{image-rendering:pixelated;width:32px;height:32px;border-radius:5px;background:rgba(0,0,0,.2)}
+.saved-agent .sa-info{flex:1;min-width:0}
+.saved-agent .sa-name{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saved-agent .sa-dept{font-size:8px;color:#3a4a5e}
+.saved-agent .sa-actions{display:flex;gap:3px;flex-shrink:0}
+
+/* New agent button */
+.new-agent-btn{width:100%;padding:8px;border-radius:8px;border:2px dashed rgba(0,230,118,.15);background:transparent;color:#69f0ae;font-size:12px;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+.new-agent-btn:hover{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.04)}
+
+/* Agent count stats */
+.agent-stats{display:flex;gap:4px;margin-bottom:8px;font-size:9px}
+.agent-stat{flex:1;padding:4px 6px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.03);text-align:center}
+.agent-stat .n{font-weight:900;color:#ffd740;font-size:13px}
+.agent-stat .l{color:#3a4a5e;font-size:7px;text-transform:uppercase}
+
+/* Full page preview */
+.full-preview{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.preview-title{font-size:12px;color:#3a5a4e;font-weight:800;letter-spacing:2px;text-transform:uppercase}
+.no-sprite-msg{font-size:14px;color:#2a3a4e;text-align:center;line-height:1.8}
+
+/* Back to game link */
+.back-link{color:#4a5a6e;text-decoration:none;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;transition:.2s}
+.back-link:hover{color:#69f0ae}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step active" data-step="1" onclick="goStep(1)"><span class="sn">📷</span>导入形象</div>
+      <div class="step" data-step="2" onclick="goStep(2)"><span class="sn">🎭</span>动画预览</div>
+      <div class="step" data-step="3" onclick="goStep(3)"><span class="sn">⚡</span>赋能技能</div>
+      <div class="step" data-step="4" onclick="goStep(4)"><span class="sn">💾</span>保存发布</div>
+    </div>
+
+    <div class="sb-body">
+      <!-- STEP 1: Import -->
+      <div class="step-panel" data-panel="1">
+        <div class="sb-section">
+          <div class="sb-title">📷 <em>导入角色形象</em></div>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('uploadInput').click()">
+            <div id="uploadContent">
+              <div class="uz-icon">🖼️</div>
+              <div class="uz-text">点击或拖拽上传角色图片</div>
+              <div class="uz-hint">支持 PNG / JPG · 建议正面全身像</div>
+            </div>
+            <div class="processing hidden" id="processOverlay">
+              <div class="spinner"></div>
+              <div class="proc-text" id="procText">正在处理图片...</div>
+            </div>
+          </div>
+          <input type="file" id="uploadInput" accept="image/*">
+        </div>
+
+        <div class="sb-section">
+          <div class="sb-title">📏 <em>尺寸设置</em></div>
+          <div class="field">
+            <label>帧尺寸 (游戏内每帧)</label>
+            <select id="frameSize">
+              <option value="0">自动检测 (推荐)</option>
+              <option value="32">32 × 32 px</option>
+              <option value="48">48 × 48 px</option>
+              <option value="64">64 × 64 px</option>
+              <option value="128">128 × 128 px</option>
+              <option value="256">256 × 256 px</option>
+            </select>
+          </div>
+          <div class="field" id="frameSizeInfo" style="display:none">
+            <div style="font-size:10px;color:#69f0ae;background:rgba(0,230,118,.05);padding:6px 10px;border-radius:6px;border:1px solid rgba(0,230,118,.1)">
+              <span id="frameSizeInfoText">--</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>显示缩放</label>
+            <select id="displayScale">
+              <option value="2.2">2.2x (默认)</option>
+              <option value="1.5">1.5x</option>
+              <option value="2.0">2.0x</option>
+              <option value="3.0">3.0x</option>
+              <option value="1.0">1.0x</option>
+              <option value="0.5">0.5x (大精灵)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sb-section" id="spriteGridSection" style="display:none">
+          <div class="sb-title">🎞️ <em>精灵表预览</em></div>
+          <div style="font-size:9px;color:#3a4a5e;margin-bottom:6px">4行×3列 (下/左/上/右 × 3帧走路)</div>
+          <div class="sprite-grid" id="spriteGrid"></div>
+          <div class="dir-labels">
+            <div class="dir-label active">⬇ 下</div>
+            <div class="dir-label">⬅ 左</div>
+            <div class="dir-label">⬆ 上</div>
+            <div class="dir-label">➡ 右</div>
+          </div>
+        </div>
+
+        <div class="sb-section" style="padding-top:8px">
+          <button class="btn primary" style="width:100%" onclick="goStep(2)" id="btnToStep2" disabled>
+            下一步：动画预览 →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Animation Preview -->
+      <div class="step-panel" data-panel="2" style="display:none">
+        <div class="sb-section">
+          <div class="sb-title">🎭 <em>四方向行走动画</em></div>
+          <div class="walk-preview">
+            <div class="walk-canvas-wrap checker-bg">
+              <canvas id="walkCanvas" width="96" height="128"></canvas>
+            </div>
+            <div class="walk-controls">
+              <div style="font-size:9px;color:#3a4a5e;font-weight:700;margin-bottom:2px">方向控制</div>
+              <div class="walk-dir-grid">
+                <div class="walk-dir-btn empty"></div>
+                <div class="walk-dir-btn" data-dir="2" onclick="setWalkDir(2)">⬆</div>
+                <div class="walk-dir-btn empty"></div>
+                <div class="walk-dir-btn" data-dir="1" onclick="setWalkDir(1)">⬅</div>
+                <div class="walk-dir-btn active" data-dir="0" onclick="setWalkDir(0)">⬇</div>
+                <div class="walk-dir-btn" data-dir="3" onclick="setWalkDir(3)">➡</div>
+              </div>
+              <div style="font-size:8px;color:#3a4a5e;margin-top:8px">动画速度</div>
+              <input type="range" class="speed-slider" id="speedSlider" min="80" max="400" value="180">
+              <div style="font-size:8px;color:#2a3a4e" id="speedLabel">180ms / 帧</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sb-section">
+          <div class="sb-title">🏷️ <em>角色基本信息</em></div>
+          <div class="field">
+            <label>角色名称</label>
+            <input type="text" id="agentName" placeholder="例：种植大师" maxlength="8">
+          </div>
+          <div class="field">
+            <label>角色 ID (英文)</label>
+            <input type="text" id="agentId" placeholder="例：plant-master" pattern="[a-z0-9-]+" maxlength="24">
+          </div>
+          <div class="field">
+            <label>角色图标</label>
+            <input type="text" id="agentIcon" placeholder="例：🌱" maxlength="4" value="🌾">
+          </div>
+          <div class="field">
+            <label>所属部门</label>
+            <select id="agentDept">
+              <option value="种植部">🌱 种植部</option>
+              <option value="销售部">📦 销售部</option>
+              <option value="品牌部">🎨 品牌部</option>
+              <option value="质检部">🔍 质检部</option>
+              <option value="财务部">💰 财务部</option>
+              <option value="后勤部">🏗️ 后勤部</option>
+              <option value="生态部">🌿 生态部</option>
+              <option value="领导层">🏛️ 领导层</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>职级</label>
+            <select id="agentTier">
+              <option value="3">T3 — 专员</option>
+              <option value="2">T2 — 部长</option>
+              <option value="1">T1 — 总监</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>驻地区域</label>
+            <select id="agentZone">
+              <option value="village-hall">🏛️ 村委会</option>
+              <option value="fields-a">🌾 农田A区</option>
+              <option value="fields-b">🌾 农田B区</option>
+              <option value="greenhouse">🏠 温室大棚</option>
+              <option value="pond">🌊 莲塘</option>
+              <option value="market">🏪 市场</option>
+              <option value="warehouse">📦 仓库</option>
+              <option value="lab">🔬 质检中心</option>
+              <option value="livestream">🎬 直播间</option>
+              <option value="logistics">🚛 物流中心</option>
+              <option value="orchard">🍊 果园</option>
+              <option value="tea-garden">🍵 茶园</option>
+              <option value="weather">🌤️ 气象站</option>
+              <option value="training">📚 培训中心</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>角色颜色</label>
+            <input type="color" id="agentColor" value="#00e676" style="height:32px;cursor:pointer">
+          </div>
+        </div>
+
+        <div class="sb-section" style="padding-top:8px">
+          <button class="btn primary" style="width:100%" onclick="goStep(3)" id="btnToStep3">
+            下一步：赋能技能 →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Skills -->
+      <div class="step-panel" data-panel="3" style="display:none">
+        <div class="sb-section">
+          <div class="sb-title">⚡ <em>赋能技能</em></div>
+          <div style="font-size:9px;color:#3a4a5e;margin-bottom:8px">选择要赋予该角色的技能（可多选）</div>
+          <div id="skillPool"></div>
+        </div>
+
+        <div class="sb-section">
+          <div class="sb-title">📝 <em>角色描述</em></div>
+          <div class="field">
+            <label>职责描述</label>
+            <textarea id="agentDesc" placeholder="描述这个角色的核心职责和工作方式..."></textarea>
+          </div>
+        </div>
+
+        <div class="sb-section" style="padding-top:8px">
+          <button class="btn primary" style="width:100%" onclick="goStep(4)">
+            下一步：保存发布 →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4: Save & Deploy -->
+      <div class="step-panel" data-panel="4" style="display:none">
+        <div class="sb-section">
+          <div class="sb-title">💾 <em>角色预览</em></div>
+          <div class="agent-card" id="agentPreviewCard">
+            <div class="ac-header">
+              <div class="ac-avatar checker-bg">
+                <canvas id="previewAvatar" width="56" height="56"></canvas>
+              </div>
+              <div class="ac-info">
+                <h3 id="prevName">--</h3>
+                <p id="prevMeta">--</p>
+              </div>
+            </div>
+            <div id="prevDesc" style="font-size:10px;color:#6a7a8e;margin-bottom:8px;line-height:1.5"></div>
+            <div class="ac-skills" id="prevSkills"></div>
+            <div class="ac-stats">
+              <div class="ac-stat"><div class="v" id="prevSkillCount">0</div><div class="l">技能</div></div>
+              <div class="ac-stat"><div class="v" id="prevTier">T3</div><div class="l">职级</div></div>
+              <div class="ac-stat"><div class="v" id="prevDept">--</div><div class="l">部门</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sb-section">
+          <button class="btn primary" style="width:100%;font-size:14px;padding:12px" onclick="saveAgent()" id="btnSave">
+            🚀 保存并部署到村庄
+          </button>
+          <div style="font-size:8px;color:#2a3a4e;margin-top:6px;text-align:center" id="saveHint">保存后角色将立即出现在游戏村庄中</div>
+        </div>
+      </div>
+
+      <!-- AGENT LIST (always at bottom) -->
+      <div class="sb-section" id="agentListSection">
+        <div class="sb-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>📋 <em>全部角色 (<span id="agentCount">0</span>)</em></span>
+          <div style="display:flex;gap:4px">
+            <select id="agentFilter" style="font-size:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#8a98a8;border-radius:4px;padding:2px 4px;cursor:pointer" onchange="renderSavedAgents()">
+              <option value="all">全部</option>
+              <option value="领导层">领导层</option>
+              <option value="种植部">种植部</option>
+              <option value="销售部">销售部</option>
+              <option value="品牌部">品牌部</option>
+              <option value="质检部">质检部</option>
+              <option value="财务部">财务部</option>
+              <option value="后勤部">后勤部</option>
+              <option value="生态部">生态部</option>
+              <option value="custom">自定义</option>
+            </select>
+          </div>
+        </div>
+        <div class="agent-stats" id="agentStats"></div>
+        <div style="display:flex;gap:4px;margin-bottom:8px">
+          <button class="new-agent-btn" onclick="resetEditor()" title="创建新角色" style="flex:1;margin-bottom:0">
+            ➕ 新建角色
+          </button>
+          <button class="btn btn-sm" onclick="resetBuiltinAgents()" title="恢复所有已删除的内置角色" style="font-size:8px;white-space:nowrap">🔄 恢复内置</button>
+        </div>
+        <div id="savedAgentsList" style="max-height:400px;overflow-y:auto">
+          <div style="font-size:10px;color:#2a3a4e;text-align:center;padding:10px">加载中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN PREVIEW -->
+  <div class="main">
+    <div class="header">
+      <h1>🧠 <span>SYNAPSE-beta</span> 角色编辑器</h1>
+      <div class="header-actions">
+        <a href="/village/map-editor" class="back-link">🗺️ 地图编辑器</a>
+        <a href="/village/game" class="back-link">← 返回游戏</a>
+      </div>
+    </div>
+    <div class="preview-area" id="previewArea">
+      <div class="full-preview" id="fullPreview">
+        <div class="preview-title">角色预览</div>
+        <div class="no-sprite-msg" id="noSpriteMsg">
+          ← 请先上传角色图片<br>
+          <span style="font-size:11px;color:#1a2a3e">支持任意尺寸图片，系统将自动转换为游戏精灵</span>
+        </div>
+        <canvas id="bigPreview" style="display:none;image-rendering:pixelated;image-rendering:crisp-edges;max-width:100%;max-height:100%"></canvas>
+        <!-- Walk animation on big canvas -->
+        <canvas id="bigWalkCanvas" style="display:none;image-rendering:pixelated;image-rendering:crisp-edges;max-width:100%;max-height:100%"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+"use strict";
+
+// ==========================================
+// STATE
+// ==========================================
+let currentStep = 1;
+let spriteSheet = null;       // Final 96×128 (or custom) sprite sheet
+let originalImage = null;     // Original uploaded image
+let walkDir = 0;              // Current preview walk direction
+let walkFrame = 0;
+let walkTimer = null;
+let walkSpeed = 180;
+let selectedSkills = new Set();
+let savedAgents = [];
+let frameSize = 0;      // 0 = auto
+let frameWidth = 32;    // Actual frame width (may differ from height)
+let frameHeight = 32;   // Actual frame height
+
+// Skills data (loaded from server)
+const SKILL_CATEGORIES = {
+  '种植管理': { color: '#00e676', icon: '🌱' },
+  '销售管理': { color: '#ff9100', icon: '📦' },
+  '运营管理': { color: '#42a5f5', icon: '📊' },
+  '质量认证': { color: '#ce93d8', icon: '🔍' },
+  '团队协调': { color: '#ffd740', icon: '🤝' },
+  '其他':     { color: '#4a5a6e', icon: '⚙️' }
+};
+
+const ALL_SKILLS = [
+  { id:'crop-plan', name:'种植方案', cat:'种植管理' },
+  { id:'soil-analysis', name:'土壤分析', cat:'种植管理' },
+  { id:'pest-alert', name:'病虫预警', cat:'种植管理' },
+  { id:'irrigation-plan', name:'灌溉计划', cat:'种植管理' },
+  { id:'harvest-schedule', name:'采收排期', cat:'种植管理' },
+  { id:'rotation-plan', name:'轮作计划', cat:'种植管理' },
+  { id:'seed-select', name:'品种选择', cat:'种植管理' },
+  { id:'fertilizer-plan', name:'施肥方案', cat:'种植管理' },
+  { id:'market-analysis', name:'市场调研', cat:'销售管理' },
+  { id:'pricing-strategy', name:'定价策略', cat:'销售管理' },
+  { id:'channel-plan', name:'渠道规划', cat:'销售管理' },
+  { id:'launch-product', name:'产品上市', cat:'销售管理' },
+  { id:'brand-build', name:'品牌建设', cat:'销售管理' },
+  { id:'livestream-plan', name:'直播策划', cat:'销售管理' },
+  { id:'seasonal-plan', name:'季度计划', cat:'运营管理' },
+  { id:'budget-review', name:'预算评审', cat:'运营管理' },
+  { id:'cost-analysis', name:'成本分析', cat:'运营管理' },
+  { id:'resource-check', name:'资源盘点', cat:'运营管理' },
+  { id:'weather-alert', name:'气象预警', cat:'运营管理' },
+  { id:'training-plan', name:'培训计划', cat:'运营管理' },
+  { id:'quality-check', name:'质量检测', cat:'质量认证' },
+  { id:'organic-audit', name:'有机认证', cat:'质量认证' },
+  { id:'food-safety-review', name:'食品安全', cat:'质量认证' },
+  { id:'team-planting', name:'种植协同', cat:'团队协调' },
+  { id:'team-harvest', name:'采收协同', cat:'团队协调' },
+  { id:'team-sales', name:'销售协同', cat:'团队协调' },
+];
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderSkillPool();
+  loadSavedAgents();
+  setupUpload();
+  setupSpeedSlider();
+  setupAutoId();
+});
+
+// ==========================================
+// STEP NAVIGATION
+// ==========================================
+function goStep(n) {
+  if (n >= 2 && !spriteSheet) { showToast('error', '请先上传并处理角色图片'); return; }
+  currentStep = n;
+  document.querySelectorAll('.step').forEach(s => {
+    const sn = +s.dataset.step;
+    s.classList.toggle('active', sn === n);
+    s.classList.toggle('done', sn < n);
+  });
+  document.querySelectorAll('.step-panel').forEach(p => {
+    p.style.display = +p.dataset.panel === n ? '' : 'none';
+  });
+  if (n === 2) startWalkAnimation();
+  else stopWalkAnimation();
+  if (n === 4) updatePreviewCard();
+  updateBigPreview();
+}
+
+// ==========================================
+// FILE UPLOAD & PROCESSING
+// ==========================================
+function setupUpload() {
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('uploadInput');
+
+  input.addEventListener('change', e => {
+    if (e.target.files[0]) processUpload(e.target.files[0]);
+  });
+
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) processUpload(e.dataTransfer.files[0]);
+  });
+}
+
+async function processUpload(file) {
+  if (!file.type.startsWith('image/')) { showToast('error', '请上传图片文件'); return; }
+
+  const overlay = document.getElementById('processOverlay');
+  const procText = document.getElementById('procText');
+  overlay.classList.remove('hidden');
+  procText.textContent = '正在上传图片...';
+
+  try {
+    // Upload to server for processing
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('frameSize', document.getElementById('frameSize').value);
+
+    procText.textContent = '正在去除背景...';
+
+    const resp = await fetch('/api/editor/process-sprite', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error || '处理失败');
+    }
+
+    const data = await resp.json();
+    procText.textContent = '正在生成精灵表...';
+
+    // Load the generated sprite sheet
+    const img = new Image();
+    img.onload = () => {
+      spriteSheet = img;
+      originalImage = img;
+      // Use actual frame dimensions from server
+      frameWidth = data.frameSize || Math.round(img.width / 3);
+      frameHeight = data.frameHeight || Math.round(img.height / 4);
+      frameSize = frameWidth;  // For API compatibility
+
+      // Show frame size info
+      const infoEl = document.getElementById('frameSizeInfo');
+      const infoText = document.getElementById('frameSizeInfoText');
+      infoEl.style.display = '';
+      const layout = data.detectedLayout || 'unknown';
+      infoText.textContent = `检测到: ${layout} · 帧: ${frameWidth}×${frameHeight}px · 表: ${img.width}×${img.height}px`;
+
+      // Auto-adjust display scale for large sprites
+      if (frameWidth >= 128) {
+        document.getElementById('displayScale').value = '0.5';
+      } else if (frameWidth >= 64) {
+        document.getElementById('displayScale').value = '1.0';
+      }
+
+      overlay.classList.add('hidden');
+
+      // Update UI
+      document.getElementById('uploadZone').classList.add('has-image');
+      document.getElementById('uploadContent').innerHTML = `<img src="${data.spriteUrl}" class="upload-preview">`;
+      document.getElementById('btnToStep2').disabled = false;
+      document.getElementById('spriteGridSection').style.display = '';
+      renderSpriteGrid();
+      updateBigPreview();
+      showToast('success', '角色精灵生成成功！');
+    };
+    img.onerror = () => {
+      throw new Error('精灵图加载失败');
+    };
+    img.src = data.spriteUrl;
+
+  } catch (err) {
+    overlay.classList.add('hidden');
+    showToast('error', err.message || '处理失败');
+    console.error(err);
+  }
+}
+
+// ==========================================
+// SPRITE GRID
+// ==========================================
+function renderSpriteGrid() {
+  if (!spriteSheet) return;
+  const grid = document.getElementById('spriteGrid');
+  grid.innerHTML = '';
+  const fw = spriteSheet.width / 3;
+  const fh = spriteSheet.height / 4;
+
+  // Use a fixed display size for grid cells (thumbnails)
+  const thumbSize = 64;
+  const thumbScale = Math.min(thumbSize / fw, thumbSize / fh);
+  const thumbW = Math.round(fw * thumbScale);
+  const thumbH = Math.round(fh * thumbScale);
+
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 3; col++) {
+      const cell = document.createElement('div');
+      cell.className = 'sprite-cell' + (row === 0 && col === 0 ? ' active' : '');
+      const cv = document.createElement('canvas');
+      cv.width = thumbW; cv.height = thumbH;
+      cv.style.width = thumbW + 'px';
+      cv.style.height = thumbH + 'px';
+      const ctx = cv.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(spriteSheet, col * fw, row * fh, fw, fh, 0, 0, thumbW, thumbH);
+      cell.appendChild(cv);
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ==========================================
+// WALK ANIMATION
+// ==========================================
+function startWalkAnimation() {
+  stopWalkAnimation();
+  walkFrame = 0;
+  walkSpeed = +document.getElementById('speedSlider').value;
+  animateWalk();
+}
+
+function animateWalk() {
+  if (currentStep !== 2 && currentStep !== 4) return;
+  drawWalkFrame();
+  walkTimer = setTimeout(() => {
+    walkFrame = (walkFrame + 1) % 3;
+    animateWalk();
+  }, walkSpeed);
+}
+
+function stopWalkAnimation() {
+  if (walkTimer) { clearTimeout(walkTimer); walkTimer = null; }
+}
+
+function drawWalkFrame() {
+  if (!spriteSheet) return;
+  const cv = document.getElementById('walkCanvas');
+  const ctx = cv.getContext('2d');
+
+  const fw = spriteSheet.width / 3;
+  const fh = spriteSheet.height / 4;
+  const sx = walkFrame * fw;
+  const sy = walkDir * fh;
+
+  // Auto-scale to fit: target sidebar walk preview
+  const shadowMargin = 12;  // space for shadow below
+  const bounceMargin = 4;   // space for bounce above
+  const maxW = 140, maxH = 180;
+  const scaleX = (maxW) / fw;
+  const scaleY = (maxH - shadowMargin - bounceMargin) / fh;
+  const scale = Math.min(scaleX, scaleY, 4);  // cap at 4x
+  const dw = Math.round(fw * scale);
+  const dh = Math.round(fh * scale);
+
+  // Resize canvas to fit character exactly
+  cv.width = dw + 16;  // 8px padding each side
+  cv.height = dh + shadowMargin + bounceMargin + 16;
+  ctx.imageSmoothingEnabled = false;
+
+  const dx = (cv.width - dw) / 2;
+  const dy = bounceMargin + 8;  // top padding + bounce room
+
+  // Ground shadow
+  ctx.save();
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(cv.width / 2, dy + dh + 4, dw * 0.35, Math.max(3, scale), 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Bounce
+  const bounce = walkFrame !== 0 ? -Math.round(scale * 0.8) : 0;
+  ctx.drawImage(spriteSheet, sx, sy, fw, fh, dx, dy + bounce, dw, dh);
+
+  // Also draw on big canvas
+  drawBigWalk();
+}
+
+function drawBigWalk() {
+  if (!spriteSheet) return;
+  const cv = document.getElementById('bigWalkCanvas');
+  if (cv.style.display === 'none') return;
+  const ctx = cv.getContext('2d');
+
+  const fw = spriteSheet.width / 3;
+  const fh = spriteSheet.height / 4;
+  const sx = walkFrame * fw;
+  const sy = walkDir * fh;
+
+  // Get the preview area size and compute scale to fit character fully centered
+  const area = document.getElementById('previewArea');
+  const areaW = area.clientWidth || 600;
+  const areaH = area.clientHeight || 500;
+  const labelH = 32;       // space for direction label on top
+  const shadowH = 20;      // space for shadow below
+  const bounceH = 8;       // space for bounce above
+  const frameH = 24;       // space for frame indicator at bottom
+  const padding = 40;      // overall padding
+
+  const availW = areaW - padding * 2;
+  const availH = areaH - padding * 2 - labelH - shadowH - bounceH - frameH;
+  const scaleX = availW / fw;
+  const scaleY = availH / fh;
+  const scale = Math.min(scaleX, scaleY, 10);  // cap at 10x
+  const dw = Math.round(fw * scale);
+  const dh = Math.round(fh * scale);
+
+  // Resize canvas to exactly fit the content
+  cv.width = dw + padding * 2;
+  cv.height = dh + labelH + shadowH + bounceH + frameH + padding;
+  ctx.imageSmoothingEnabled = false;
+
+  const dx = (cv.width - dw) / 2;
+  const dy = labelH + bounceH + padding / 2;
+
+  // Shadow
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(cv.width / 2, dy + dh + Math.round(scale * 0.5), dw * 0.3, Math.max(4, Math.round(scale * 1.2)), 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const bounce = walkFrame !== 0 ? -Math.round(scale * 0.7) : 0;
+  ctx.drawImage(spriteSheet, sx, sy, fw, fh, dx, dy + bounce, dw, dh);
+
+  // Dir indicator
+  const dirs = ['⬇ 下', '⬅ 左', '⬆ 上', '➡ 右'];
+  ctx.font = `bold ${Math.max(14, Math.round(scale * 2))}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(0,230,118,.6)';
+  ctx.fillText(dirs[walkDir], cv.width / 2, labelH);
+
+  // Frame indicator
+  ctx.font = `${Math.max(10, Math.round(scale))}px monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,.2)';
+  ctx.fillText(`Frame ${walkFrame + 1}/3`, cv.width / 2, cv.height - 8);
+}
+
+function setWalkDir(d) {
+  walkDir = d;
+  document.querySelectorAll('.walk-dir-btn').forEach(b => {
+    b.classList.toggle('active', +b.dataset.dir === d);
+  });
+  document.querySelectorAll('.dir-label').forEach((l, i) => {
+    l.classList.toggle('active', i === d);
+  });
+}
+
+function setupSpeedSlider() {
+  const slider = document.getElementById('speedSlider');
+  slider.addEventListener('input', () => {
+    walkSpeed = +slider.value;
+    document.getElementById('speedLabel').textContent = walkSpeed + 'ms / 帧';
+  });
+}
+
+// ==========================================
+// BIG PREVIEW
+// ==========================================
+function updateBigPreview() {
+  const bigCv = document.getElementById('bigPreview');
+  const bigWalk = document.getElementById('bigWalkCanvas');
+  const noMsg = document.getElementById('noSpriteMsg');
+
+  if (!spriteSheet) {
+    bigCv.style.display = 'none';
+    bigWalk.style.display = 'none';
+    noMsg.style.display = '';
+    return;
+  }
+
+  noMsg.style.display = 'none';
+
+  if (currentStep === 1) {
+    // Show full sprite sheet — auto-scale to fit preview area
+    bigCv.style.display = '';
+    bigWalk.style.display = 'none';
+
+    const area = document.getElementById('previewArea');
+    const areaW = area.clientWidth || 600;
+    const areaH = area.clientHeight || 500;
+    const pad = 40;
+    const scaleX = (areaW - pad * 2) / spriteSheet.width;
+    const scaleY = (areaH - pad * 2) / spriteSheet.height;
+    const scale = Math.min(scaleX, scaleY, 8);
+
+    bigCv.width = Math.round(spriteSheet.width * scale);
+    bigCv.height = Math.round(spriteSheet.height * scale);
+    const ctx = bigCv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // Checkerboard
+    const tileSize = Math.max(8, Math.round(8 * scale / 4)) * 4;
+    for (let y = 0; y < bigCv.height; y += tileSize) {
+      for (let x = 0; x < bigCv.width; x += tileSize) {
+        ctx.fillStyle = ((x + y) / tileSize) % 2 === 0 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.06)';
+        ctx.fillRect(x, y, tileSize, tileSize);
+      }
+    }
+
+    ctx.drawImage(spriteSheet, 0, 0, bigCv.width, bigCv.height);
+
+    // Grid overlay
+    const fw = bigCv.width / 3;
+    const fh = bigCv.height / 4;
+    ctx.strokeStyle = 'rgba(0,230,118,.15)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 3; i++) { ctx.beginPath(); ctx.moveTo(Math.round(i * fw), 0); ctx.lineTo(Math.round(i * fw), bigCv.height); ctx.stroke(); }
+    for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(0, Math.round(i * fh)); ctx.lineTo(bigCv.width, Math.round(i * fh)); ctx.stroke(); }
+
+    // Row labels
+    const labels = ['⬇ 下', '⬅ 左', '⬆ 上', '➡ 右'];
+    const fontSize = Math.max(12, Math.round(scale * 3.5));
+    ctx.font = `bold ${fontSize}px system-ui`;
+    ctx.textAlign = 'left';
+    labels.forEach((l, i) => {
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      ctx.fillText(l, 5, i * fh + fontSize + 2);
+      ctx.fillStyle = 'rgba(0,230,118,.6)';
+      ctx.fillText(l, 4, i * fh + fontSize + 1);
+    });
+  } else if (currentStep === 2 || currentStep === 3 || currentStep === 4) {
+    // Show walk animation — canvas sizes are set dynamically in drawBigWalk
+    bigCv.style.display = 'none';
+    bigWalk.style.display = '';
+    if (currentStep === 2) startWalkAnimation();
+    drawBigWalk();
+  }
+}
+
+// ==========================================
+// SKILLS
+// ==========================================
+function renderSkillPool() {
+  const pool = document.getElementById('skillPool');
+  let html = '';
+  const cats = {};
+  ALL_SKILLS.forEach(s => {
+    if (!cats[s.cat]) cats[s.cat] = [];
+    cats[s.cat].push(s);
+  });
+
+  Object.entries(cats).forEach(([cat, skills]) => {
+    const c = SKILL_CATEGORIES[cat] || SKILL_CATEGORIES['其他'];
+    html += `<div class="skill-category">${c.icon} ${cat}</div><div class="skill-pool">`;
+    skills.forEach(s => {
+      html += `<div class="skill-tag" data-skill="${s.id}" onclick="toggleSkill('${s.id}',this)">${c.icon} ${s.name}</div>`;
+    });
+    html += '</div>';
+  });
+  pool.innerHTML = html;
+}
+
+function toggleSkill(id, el) {
+  if (selectedSkills.has(id)) {
+    selectedSkills.delete(id);
+    el.classList.remove('selected');
+  } else {
+    selectedSkills.add(id);
+    el.classList.add('selected');
+  }
+}
+
+// ==========================================
+// AUTO-ID FROM NAME
+// ==========================================
+function setupAutoId() {
+  document.getElementById('agentName').addEventListener('input', e => {
+    const name = e.target.value.trim();
+    const idField = document.getElementById('agentId');
+    if (!idField._manual) {
+      // Simple pinyin-like conversion for common characters, or just use timestamp
+      idField.value = 'custom-' + Date.now().toString(36).slice(-6);
+    }
+  });
+  document.getElementById('agentId').addEventListener('input', () => {
+    document.getElementById('agentId')._manual = true;
+  });
+}
+
+// ==========================================
+// PREVIEW CARD
+// ==========================================
+function updatePreviewCard() {
+  const name = document.getElementById('agentName').value || '未命名角色';
+  const dept = document.getElementById('agentDept').value;
+  const tier = document.getElementById('agentTier').value;
+  const icon = document.getElementById('agentIcon').value;
+  const desc = document.getElementById('agentDesc').value;
+
+  document.getElementById('prevName').textContent = icon + ' ' + name;
+  document.getElementById('prevMeta').textContent = `${dept} · T${tier} · ${document.getElementById('agentZone').selectedOptions[0].text}`;
+  document.getElementById('prevDesc').textContent = desc || '暂无描述';
+  document.getElementById('prevSkillCount').textContent = selectedSkills.size;
+  document.getElementById('prevTier').textContent = 'T' + tier;
+  document.getElementById('prevDept').textContent = dept;
+
+  const skillsHtml = [...selectedSkills].map(id => {
+    const s = ALL_SKILLS.find(x => x.id === id);
+    return s ? `<span class="ac-skill">${s.name}</span>` : '';
+  }).join('');
+  document.getElementById('prevSkills').innerHTML = skillsHtml || '<span style="font-size:9px;color:#2a3a4e">未分配技能</span>';
+
+  // Draw avatar
+  if (spriteSheet) {
+    const cv = document.getElementById('previewAvatar');
+    const ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, 56, 56);
+    const fw = spriteSheet.width / 3;
+    const fh = spriteSheet.height / 4;
+    ctx.drawImage(spriteSheet, 0, 0, fw, fh, 4, 0, 48, 56);
+  }
+
+  // Start walk anim for big preview
+  startWalkAnimation();
+  updateBigPreview();
+}
+
+// ==========================================
+// SAVE AGENT
+// ==========================================
+let editingAgentId = null;  // null = new agent, string = editing existing
+
+async function saveAgent() {
+  const name = document.getElementById('agentName').value.trim();
+  const id = editingAgentId || document.getElementById('agentId').value.trim();
+  if (!name) { showToast('error', '请输入角色名称'); return; }
+  if (!id) { showToast('error', '请输入角色ID'); return; }
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+
+  try {
+    const agentPayload = {
+      id,
+      name,
+      icon: document.getElementById('agentIcon').value,
+      dept: document.getElementById('agentDept').value,
+      tier: +document.getElementById('agentTier').value,
+      zone: document.getElementById('agentZone').value,
+      color: document.getElementById('agentColor').value,
+      skills: [...selectedSkills],
+      description: document.getElementById('agentDesc').value,
+      sprite: id,
+      scale: +document.getElementById('displayScale').value,
+      frameSize: frameWidth,
+      frameHeight: frameHeight
+    };
+
+    if (spriteSheet) {
+      // Has a new sprite — upload with multipart
+      const cv = document.createElement('canvas');
+      cv.width = spriteSheet.width;
+      cv.height = spriteSheet.height;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(spriteSheet, 0, 0);
+      const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+
+      const formData = new FormData();
+      formData.append('sprite', blob, `char-${id}.png`);
+      formData.append('agent', JSON.stringify(agentPayload));
+
+      const url = editingAgentId ? `/api/editor/agents/${id}` : '/api/editor/save-agent';
+      const method = editingAgentId ? 'PUT' : 'POST';
+      const resp = await fetch(url, { method, body: formData });
+      if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || '保存失败'); }
+    } else if (editingAgentId) {
+      // Editing without new sprite — JSON only
+      const resp = await fetch(`/api/editor/agents/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(agentPayload)
+      });
+      if (!resp.ok) { const err = await resp.json(); throw new Error(err.error || '更新失败'); }
+    } else {
+      showToast('error', '请先上传角色图片'); return;
+    }
+
+    showToast('success', editingAgentId ? `✅ ${name} 已更新！` : `✅ ${name} 已保存并部署！`);
+    editingAgentId = null;
+    loadSavedAgents();
+    resetEditor();
+
+  } catch (err) {
+    showToast('error', err.message || '保存失败');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 保存并部署到村庄';
+  }
+}
+
+function resetEditor() {
+  editingAgentId = null;
+  spriteSheet = null;
+  originalImage = null;
+  selectedSkills.clear();
+  document.getElementById('agentName').value = '';
+  document.getElementById('agentId').value = '';
+  document.getElementById('agentId')._manual = false;
+  document.getElementById('agentIcon').value = '🌾';
+  document.getElementById('agentDesc').value = '';
+  document.getElementById('btnToStep2').disabled = true;
+  document.getElementById('spriteGridSection').style.display = 'none';
+  document.getElementById('uploadZone').classList.remove('has-image');
+  document.getElementById('uploadContent').innerHTML = `
+    <div class="uz-icon">🖼️</div>
+    <div class="uz-text">点击或拖拽上传角色图片</div>
+    <div class="uz-hint">支持 PNG / JPG · 建议正面全身像</div>`;
+  document.getElementById('frameSizeInfo').style.display = 'none';
+  document.getElementById('saveHint').textContent = '保存后角色将立即出现在游戏村庄中';
+  document.getElementById('btnSave').textContent = '🚀 保存并部署到村庄';
+  goStep(1);
+}
+
+// ==========================================
+// LOAD ALL AGENTS
+// ==========================================
+async function loadSavedAgents() {
+  try {
+    const resp = await fetch('/api/editor/agents');
+    if (resp.ok) {
+      savedAgents = await resp.json();
+      document.getElementById('agentCount').textContent = savedAgents.length;
+      renderSavedAgents();
+    }
+  } catch (e) {}
+}
+
+function renderSavedAgents() {
+  const list = document.getElementById('savedAgentsList');
+  const filter = document.getElementById('agentFilter').value;
+  let agents = savedAgents;
+
+  // Update stats
+  const builtinCount = savedAgents.filter(a => a.builtin).length;
+  const customCount = savedAgents.filter(a => !a.builtin).length;
+  const statsEl = document.getElementById('agentStats');
+  statsEl.innerHTML = `
+    <div class="agent-stat"><div class="n">${savedAgents.length}</div><div class="l">总数</div></div>
+    <div class="agent-stat"><div class="n">${builtinCount}</div><div class="l">内置</div></div>
+    <div class="agent-stat"><div class="n">${customCount}</div><div class="l">自定义</div></div>
+    <div class="agent-stat"><div class="n">${new Set(savedAgents.map(a=>a.dept)).size}</div><div class="l">部门</div></div>
+  `;
+
+  if (filter === 'custom') {
+    agents = agents.filter(a => !a.builtin);
+  } else if (filter !== 'all') {
+    agents = agents.filter(a => a.dept === filter);
+  }
+
+  if (!agents.length) {
+    list.innerHTML = '<div style="font-size:10px;color:#2a3a4e;text-align:center;padding:10px">暂无角色</div>';
+    return;
+  }
+
+  list.innerHTML = agents.map(a => {
+    const isBuiltin = a.builtin;
+    const tierLabel = a.tier === 1 ? 'T1' : a.tier === 2 ? 'T2' : 'T3';
+    const badgeColor = isBuiltin ? 'rgba(255,215,64,.15)' : 'rgba(0,230,118,.15)';
+    const badgeText = isBuiltin ? '内置' : '自定义';
+    const badgeBorder = isBuiltin ? 'rgba(255,215,64,.25)' : 'rgba(0,230,118,.25)';
+    const badgeTextColor = isBuiltin ? '#ffd740' : '#00e676';
+    const isEditing = editingAgentId === a.id;
+    return `
+    <div class="saved-agent${isEditing ? ' editing' : ''}" onclick="editAgent('${a.id}')">
+      <canvas class="sa-cv" data-sprite="${a.sprite || a.id}" data-builtin="${isBuiltin}" data-sprite-url="${a.spriteUrl || ''}" width="32" height="32"></canvas>
+      <div class="sa-info">
+        <div class="sa-name">${a.icon || ''} ${a.name}</div>
+        <div class="sa-dept">${a.dept} · ${tierLabel} · ${(a.skills||[]).length}技能</div>
+      </div>
+      <div class="sa-actions">
+        <span style="font-size:7px;padding:2px 5px;border-radius:8px;background:${badgeColor};border:1px solid ${badgeBorder};color:${badgeTextColor};font-weight:800">${badgeText}</span>
+        <button class="btn btn-sm" onclick="event.stopPropagation();editAgent('${a.id}')" title="编辑">✏️</button>
+        <button class="btn btn-sm danger" onclick="event.stopPropagation();deleteAgent('${a.id}','${a.name}',${isBuiltin})" title="删除">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Load sprite previews
+  setTimeout(() => {
+    document.querySelectorAll('.sa-cv').forEach(cv => {
+      const sp = cv.dataset.sprite;
+      const isBuiltin = cv.dataset.builtin === 'true';
+      const spriteUrl = cv.dataset.spriteUrl;
+      const img = new Image();
+      img.onload = () => {
+        const ctx = cv.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        const fw = img.width / 3, fh = img.height / 4;
+        ctx.drawImage(img, 0, 0, fw, fh, 0, 0, 32, 32);
+      };
+      if (spriteUrl) {
+        img.src = spriteUrl;
+      } else {
+        img.src = `/game/assets/sprites/char-${sp}.png`;
+      }
+    });
+  }, 50);
+}
+
+// ==========================================
+// EDIT AGENT
+// ==========================================
+async function editAgent(id) {
+  try {
+    const resp = await fetch(`/api/editor/agents/${id}`);
+    if (!resp.ok) { showToast('error', '加载角色信息失败'); return; }
+    const agent = await resp.json();
+
+    // Set editing mode
+    editingAgentId = id;
+
+    // Fill form fields
+    document.getElementById('agentName').value = agent.name || '';
+    document.getElementById('agentId').value = id;
+    document.getElementById('agentId')._manual = true;
+    document.getElementById('agentIcon').value = agent.icon || '🌾';
+    document.getElementById('agentDept').value = agent.dept || '种植部';
+    document.getElementById('agentTier').value = String(agent.tier || 3);
+    document.getElementById('agentZone').value = agent.zone || 'village-hall';
+    document.getElementById('agentColor').value = agent.color || '#00e676';
+    document.getElementById('agentDesc').value = agent.description || '';
+    if (agent.scale) document.getElementById('displayScale').value = String(agent.scale);
+
+    // Set skills
+    selectedSkills.clear();
+    (agent.skills || []).forEach(s => selectedSkills.add(s));
+    document.querySelectorAll('.skill-tag').forEach(el => {
+      el.classList.toggle('selected', selectedSkills.has(el.dataset.skill));
+    });
+
+    // Load sprite if available
+    const spriteUrl = agent.spriteUrl || `/game/assets/sprites/char-${agent.sprite || id}.png`;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      spriteSheet = img;
+      frameWidth = Math.round(img.width / 3);
+      frameHeight = Math.round(img.height / 4);
+      frameSize = frameWidth;
+
+      document.getElementById('btnToStep2').disabled = false;
+      document.getElementById('spriteGridSection').style.display = '';
+      document.getElementById('uploadZone').classList.add('has-image');
+      document.getElementById('uploadContent').innerHTML = `<img src="${spriteUrl}" class="upload-preview">`;
+
+      const infoEl = document.getElementById('frameSizeInfo');
+      const infoText = document.getElementById('frameSizeInfoText');
+      infoEl.style.display = '';
+      infoText.textContent = `编辑模式 · 帧: ${frameWidth}×${frameHeight}px · 表: ${img.width}×${img.height}px`;
+
+      renderSpriteGrid();
+      updateBigPreview();
+    };
+    img.onerror = () => {
+      // No sprite available, that's ok for editing properties
+      spriteSheet = null;
+    };
+    img.src = spriteUrl;
+
+    // Update save button
+    document.getElementById('btnSave').textContent = '💾 更新角色配置';
+    document.getElementById('saveHint').textContent = `正在编辑: ${agent.name} (${id})`;
+
+    // Go to step 2 (or 3 for quick skill edit)
+    goStep(2);
+    renderSavedAgents();  // Highlight the editing agent
+    showToast('info', `正在编辑: ${agent.name}`);
+
+  } catch (err) {
+    showToast('error', '加载角色失败: ' + err.message);
+  }
+}
+
+async function deleteAgent(id, name, isBuiltin) {
+  const msg = isBuiltin
+    ? `"${name}" 是内置角色。\n删除后可以通过"恢复内置"按钮恢复。\n确定要删除吗？`
+    : `确定要删除角色 "${name}" 吗？\n删除后将从游戏中移除，且无法恢复。`;
+  if (!confirm(msg)) return;
+  try {
+    const resp = await fetch(`/api/editor/agents/${id}`, { method: 'DELETE' });
+    if (resp.ok) {
+      showToast('success', `${name} 已删除`);
+      if (editingAgentId === id) resetEditor();
+      loadSavedAgents();
+    }
+  } catch (e) {
+    showToast('error', '删除失败');
+  }
+}
+
+async function resetBuiltinAgents() {
+  if (!confirm('确定要恢复所有内置角色吗？\n已删除的内置角色将被重新创建。\n已修改的内置角色配置将被还原为默认值。\n自定义角色不受影响。')) return;
+  try {
+    const resp = await fetch('/api/editor/agents/reset-builtin', { method: 'POST' });
+    if (resp.ok) {
+      const data = await resp.json();
+      showToast('success', `已恢复 ${data.count} 个内置角色`);
+      loadSavedAgents();
+    }
+  } catch (e) {
+    showToast('error', '恢复失败');
+  }
+}
+
+// ==========================================
+// TOAST
+// ==========================================
+function showToast(type, msg) {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// ==========================================
+// RESPONSIVE RESIZE
+// ==========================================
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (spriteSheet) updateBigPreview();
+  }, 150);
+});
+
+</script>
+</body>
+</html>

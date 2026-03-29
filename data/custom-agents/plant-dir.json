@@ -1,0 +1,24 @@
+{
+  "id": "plant-dir",
+  "name": "种植部长",
+  "icon": "🌱",
+  "dept": "种植部",
+  "tier": 2,
+  "sprite": "plant-dir",
+  "zone": "fields-a",
+  "color": "#00e676",
+  "skills": [
+    "crop-plan",
+    "rotation-plan",
+    "seed-select",
+    "harvest-schedule"
+  ],
+  "description": "种植部门负责人，管理所有农田生产",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-plant-dir.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.397Z",
+  "updatedAt": "2026-03-27T17:15:19.005Z"
+}

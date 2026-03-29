@@ -1,0 +1,22 @@
+{
+  "id": "pest",
+  "name": "病虫害专",
+  "icon": "🐛",
+  "dept": "种植部",
+  "tier": 3,
+  "sprite": "pest",
+  "zone": "greenhouse",
+  "color": "#00e676",
+  "skills": [
+    "pest-alert",
+    "quality-check"
+  ],
+  "description": "病虫害监测预警和防治",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-pest.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.398Z",
+  "updatedAt": "2026-03-27T17:24:18.968Z"
+}

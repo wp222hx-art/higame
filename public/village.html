@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智慧农村管理系统 — AI 多代理协作平台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a1628;--card:#12233d;--border:#1e3a5f;
+  --green:#4CAF50;--brown:#8B7355;--gold:#FFD700;
+  --red:#E74C3C;--blue:#3498DB;--purple:#9B59B6;
+  --orange:#E67E22;--pink:#E91E63;--cyan:#00BCD4;
+  --text:#e0e6ed;--muted:#7b8da0;
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+.header{background:linear-gradient(135deg,#1a4731 0%,#0a1628 50%,#2d1b0e 100%);padding:30px 40px;border-bottom:2px solid var(--green);position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' opacity='0.05'%3E%3Ctext x='10' y='50' font-size='40'%3E🌾%3C/text%3E%3Ctext x='50' y='30' font-size='30'%3E🏡%3C/text%3E%3Ctext x='70' y='70' font-size='35'%3E🌿%3C/text%3E%3C/svg%3E");opacity:0.3}
+.header h1{font-size:28px;font-weight:700;color:#fff;position:relative;z-index:1}
+.header h1 span{color:var(--green)}
+.header p{color:var(--muted);margin-top:6px;position:relative;z-index:1}
+.stats-bar{display:flex;gap:20px;margin-top:16px;flex-wrap:wrap;position:relative;z-index:1}
+.stat-item{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 20px;display:flex;align-items:center;gap:10px}
+.stat-num{font-size:24px;font-weight:700;color:var(--green)}
+.stat-label{font-size:12px;color:var(--muted);text-transform:uppercase}
+.nav{display:flex;gap:0;border-bottom:2px solid var(--border);background:var(--card);padding:0 20px;position:sticky;top:0;z-index:100}
+.nav button{background:none;border:none;color:var(--muted);font-size:14px;padding:14px 24px;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;font-weight:500}
+.nav button:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+.nav button.active{color:var(--green);border-bottom-color:var(--green);font-weight:700}
+.content{padding:30px 40px;max-width:1400px;margin:0 auto}
+.section{display:none}
+.section.active{display:block}
+
+/* Agents */
+.dept-group{margin-bottom:30px}
+.dept-title{font-size:18px;font-weight:700;margin-bottom:12px;padding:8px 16px;background:rgba(76,175,80,0.1);border-left:3px solid var(--green);border-radius:0 6px 6px 0;display:flex;align-items:center;gap:10px}
+.dept-title .emoji{font-size:22px}
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.agent-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s}
+.agent-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 6px 20px rgba(76,175,80,0.15)}
+.agent-card .tier-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;display:inline-block;margin-bottom:8px}
+.tier1{background:rgba(255,215,0,0.15);color:var(--gold);border:1px solid rgba(255,215,0,0.3)}
+.tier2{background:rgba(52,152,219,0.15);color:var(--blue);border:1px solid rgba(52,152,219,0.3)}
+.tier3{background:rgba(155,89,182,0.15);color:var(--purple);border:1px solid rgba(155,89,182,0.3)}
+.agent-card h3{font-size:15px;margin-bottom:6px;color:#fff}
+.agent-card p{font-size:12px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.agent-detail{font-size:11px;color:var(--muted);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap}
+.agent-detail span{background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px}
+
+/* Skills */
+.skill-category{margin-bottom:24px}
+.cat-title{font-size:16px;font-weight:700;margin-bottom:10px;color:var(--green)}
+.skills-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.skill-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;transition:all .2s}
+.skill-item:hover{border-color:var(--blue)}
+.skill-item .cmd{color:var(--cyan);font-family:monospace;font-size:13px;font-weight:700}
+.skill-item .desc{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Hooks */
+.hooks-list{display:grid;gap:12px}
+.hook-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.hook-info{flex:1}
+.hook-info h4{font-size:14px;color:#fff}
+.hook-info .trigger{font-size:11px;color:var(--cyan);font-family:monospace;margin-top:4px}
+.hook-info .desc{font-size:12px;color:var(--muted);margin-top:4px}
+.hook-badges{display:flex;gap:6px}
+.badge{font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600}
+.badge-block{background:rgba(231,76,60,0.15);color:var(--red);border:1px solid rgba(231,76,60,0.3)}
+.badge-info{background:rgba(52,152,219,0.15);color:var(--blue);border:1px solid rgba(52,152,219,0.3)}
+.run-btn{background:var(--green);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;white-space:nowrap}
+.run-btn:hover{background:#45a049;transform:scale(1.05)}
+.hook-output{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:10px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto;display:none}
+
+/* Rules */
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.rule-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.rule-card h4{font-size:14px;color:#fff;margin-bottom:6px}
+.rule-card .path{font-size:11px;color:var(--cyan);font-family:monospace;margin-bottom:8px}
+.rule-card .preview{font-size:12px;color:var(--muted);line-height:1.5;max-height:120px;overflow:hidden}
+
+/* Docs */
+.docs-group{margin-bottom:24px}
+.docs-group h3{font-size:16px;margin-bottom:10px;color:var(--green);display:flex;align-items:center;gap:8px}
+.docs-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.doc-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px;cursor:default}
+.doc-item .title{font-size:14px;color:#fff;font-weight:600}
+.doc-item .file{font-size:11px;color:var(--muted);font-family:monospace;margin-top:4px}
+
+/* Isometric Village View */
+.village-view{position:relative;width:100%;height:600px;overflow:hidden;background:linear-gradient(180deg,#1a3a20 0%,#0f2618 40%,#0a1628 100%);border-radius:12px;border:1px solid var(--border)}
+.village-canvas{width:100%;height:100%}
+
+/* Loading */
+.loading{text-align:center;padding:60px;color:var(--muted)}
+.loading .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Responsive */
+@media(max-width:768px){
+  .content{padding:16px}
+  .header{padding:20px}
+  .agents-grid,.skills-list,.rules-grid,.docs-list{grid-template-columns:1fr}
+  .nav{overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌾 <span>智慧农村管理系统</span> — AI 多代理协作平台</h1>
+  <p>参照 Claude Code Game Studios 架构 · 32 个专业代理 · 26 个工作流 · 从种植到销售的全链条管理</p>
+  <div class="stats-bar" id="stats-bar">
+    <div class="loading"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="switchTab('village')">🏡 村庄全景</button>
+  <button onclick="switchTab('agents')">👥 代理团队 (32)</button>
+  <button onclick="switchTab('skills')">⚡ 工作流 (26)</button>
+  <button onclick="switchTab('hooks')">🔧 自动化验证</button>
+  <button onclick="switchTab('rules')">📏 管理标准</button>
+  <button onclick="switchTab('docs')">📚 文档体系</button>
+  <a href="/village/guide" style="margin-left:auto;color:var(--green);text-decoration:none;font-size:14px;padding:14px 24px;display:flex;align-items:center;gap:6px;font-weight:600;transition:all .2s;border-bottom:3px solid transparent" onmouseover="this.style.background='rgba(76,175,80,0.08)'" onmouseout="this.style.background='none'">📖 使用教程 →</a>
+  <a href="/village/game" style="color:var(--gold);text-decoration:none;font-size:14px;padding:14px 24px;display:flex;align-items:center;gap:6px;font-weight:600;transition:all .2s;border-bottom:3px solid transparent;background:rgba(255,215,0,0.05)" onmouseover="this.style.background='rgba(255,215,0,0.1)'" onmouseout="this.style.background='rgba(255,215,0,0.05)'">🎮 进入游戏 →</a>
+</div>
+
+<div class="content">
+  <!-- Village View -->
+  <div class="section active" id="sec-village">
+    <div class="village-view">
+      <canvas id="villageCanvas" class="village-canvas"></canvas>
+    </div>
+    <p style="text-align:center;color:var(--muted);margin-top:12px;font-size:13px">
+      🖱️ 鼠标悬停查看部门详情 · 点击进入部门代理列表
+    </p>
+  </div>
+
+  <!-- Agents -->
+  <div class="section" id="sec-agents">
+    <div id="agents-content"><div class="loading"><div class="spinner"></div>加载代理数据...</div></div>
+  </div>
+
+  <!-- Skills -->
+  <div class="section" id="sec-skills">
+    <div id="skills-content"><div class="loading"><div class="spinner"></div>加载工作流...</div></div>
+  </div>
+
+  <!-- Hooks -->
+  <div class="section" id="sec-hooks">
+    <div id="hooks-content"><div class="loading"><div class="spinner"></div>加载验证钩子...</div></div>
+  </div>
+
+  <!-- Rules -->
+  <div class="section" id="sec-rules">
+    <div id="rules-content"><div class="loading"><div class="spinner"></div>加载管理标准...</div></div>
+  </div>
+
+  <!-- Docs -->
+  <div class="section" id="sec-docs">
+    <div id="docs-content"><div class="loading"><div class="spinner"></div>加载文档...</div></div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('sec-' + tab).classList.add('active');
+  if (tab === 'village') drawVillage();
+}
+
+// Load stats
+async function loadStats() {
+  try {
+    const res = await fetch('/api/village/stats');
+    const d = await res.json();
+    document.getElementById('stats-bar').innerHTML = `
+      <div class="stat-item"><div><div class="stat-num">${d.agentCount}</div><div class="stat-label">Agents 代理</div></div></div>
+      <div class="stat-item"><div><div class="stat-num">${d.skillCount}</div><div class="stat-label">Skills 工作流</div></div></div>
+      <div class="stat-item"><div><div class="stat-num">${d.ruleCount}</div><div class="stat-label">Rules 标准</div></div></div>
+      <div class="stat-item"><div><div class="stat-num">${d.hookCount}</div><div class="stat-label">Hooks 验证</div></div></div>
+      <div class="stat-item"><div><div class="stat-num">${d.templateCount}</div><div class="stat-label">Templates 模板</div></div></div>
+      <div class="stat-item"><div><div class="stat-num">${d.docCount}</div><div class="stat-label">Docs 文档</div></div></div>
+    `;
+  } catch(e) { console.error(e); }
+}
+
+// Load agents
+async function loadAgents() {
+  try {
+    const res = await fetch('/api/village/agents');
+    const agents = await res.json();
+    const depts = {};
+    const deptEmoji = {
+      '村级领导': '🏛️', '种植部': '🌱', '销售部': '📦', '品牌部': '🎨',
+      '质检部': '🔍', '财务部': '💰', '后勤部': '🏗️', '生态部': '🌿', '其他': '📋'
+    };
+    const deptOrder = ['村级领导','种植部','销售部','品牌部','质检部','财务部','后勤部','生态部'];
+    
+    agents.forEach(a => {
+      if (!depts[a.department]) depts[a.department] = [];
+      depts[a.department].push(a);
+    });
+
+    let html = '';
+    deptOrder.forEach(dept => {
+      if (!depts[dept]) return;
+      const emoji = deptEmoji[dept] || '📋';
+      html += `<div class="dept-group">
+        <div class="dept-title"><span class="emoji">${emoji}</span>${dept} (${depts[dept].length}人)</div>
+        <div class="agents-grid">`;
+      depts[dept].forEach(a => {
+        const tierClass = `tier${a.tier}`;
+        const tierLabel = a.tier === 1 ? 'Tier 1 领导层' : a.tier === 2 ? 'Tier 2 部门负责人' : 'Tier 3 专业人员';
+        html += `<div class="agent-card">
+          <span class="tier-badge ${tierClass}">${tierLabel}</span>
+          <h3>${a.name}</h3>
+          <p>${a.description}</p>
+          <div class="agent-detail">
+            <span>🤖 ${a.model}</span>
+            ${a.tools ? `<span>🔧 ${a.tools.split(',').length} tools</span>` : ''}
+            ${a.maxTurns ? `<span>🔄 ${a.maxTurns} turns</span>` : ''}
+          </div>
+        </div>`;
+      });
+      html += '</div></div>';
+    });
+    document.getElementById('agents-content').innerHTML = html;
+  } catch(e) {
+    document.getElementById('agents-content').innerHTML = '<p style="color:var(--red)">加载失败: ' + e.message + '</p>';
+  }
+}
+
+// Load skills
+async function loadSkills() {
+  try {
+    const res = await fetch('/api/village/skills');
+    const skills = await res.json();
+    const cats = {};
+    const catEmoji = {
+      '种植管理': '🌾', '销售管理': '💹', '运营管理': '📊',
+      '质量认证': '✅', '团队协调': '🤝', '其他': '📋'
+    };
+    skills.forEach(s => {
+      if (!cats[s.category]) cats[s.category] = [];
+      cats[s.category].push(s);
+    });
+
+    let html = '';
+    Object.keys(cats).sort().forEach(cat => {
+      const emoji = catEmoji[cat] || '📋';
+      html += `<div class="skill-category">
+        <div class="cat-title">${emoji} ${cat} (${cats[cat].length})</div>
+        <div class="skills-list">`;
+      cats[cat].forEach(s => {
+        html += `<div class="skill-item">
+          <div class="cmd">/${s.id}</div>
+          <div class="desc">${s.description}</div>
+        </div>`;
+      });
+      html += '</div></div>';
+    });
+    document.getElementById('skills-content').innerHTML = html;
+  } catch(e) {
+    document.getElementById('skills-content').innerHTML = '<p style="color:var(--red)">加载失败</p>';
+  }
+}
+
+// Load hooks
+async function loadHooks() {
+  try {
+    const res = await fetch('/api/village/hooks');
+    const hooks = await res.json();
+    
+    const testData = {
+      'validate-rotation': { path: 'data/planting/test.json', content: { plot_id:'A001', crop:'番茄', variety:'粉果', area:3.5, plant_date:'2026-03-27' }},
+      'validate-quality': { path: 'data/quality/test.json', content: { sample_id:'QC001', product_name:'草莓', sample_date:'2026-03-27', test_items:['农残'], result:'合格', conclusion:'合格' }},
+      'validate-pricing': { path: 'data/sales/test.json', content: { product:'草莓', cost_per_kg:6, price_per_kg:20 }},
+      'weather-alert-trigger': { path: 'data/weather/test.json', content: { temperature: 2, rainfall_mm: 55 }},
+      'validate-expense': { path: 'data/finance/test.json', content: { amount: 8000, item: '有机肥采购', approved_by: 'operations-director' }},
+      'validate-brand-assets': { path: 'assets/brand/Logo_Test.PNG', content: {} }
+    };
+
+    let html = '<div class="hooks-list">';
+    hooks.forEach(h => {
+      html += `<div>
+        <div class="hook-card">
+          <div class="hook-info">
+            <h4>${h.name}</h4>
+            <div class="trigger">触发: ${h.trigger}</div>
+            <div class="desc">${h.desc}</div>
+          </div>
+          <div class="hook-badges">
+            ${h.blocking ? '<span class="badge badge-block">阻断</span>' : '<span class="badge badge-info">非阻断</span>'}
+          </div>
+          <button class="run-btn" onclick="runHook('${h.id}',this)">▶ 运行测试</button>
+        </div>
+        <div class="hook-output" id="output-${h.id}"></div>
+      </div>`;
+    });
+    html += '</div>';
+    document.getElementById('hooks-content').innerHTML = html;
+    
+    // Store test data
+    window._hookTestData = testData;
+  } catch(e) {
+    document.getElementById('hooks-content').innerHTML = '<p style="color:var(--red)">加载失败</p>';
+  }
+}
+
+async function runHook(hookId, btn) {
+  const outputEl = document.getElementById('output-' + hookId);
+  outputEl.style.display = 'block';
+  outputEl.textContent = '运行中...';
+  btn.disabled = true;
+  btn.textContent = '⏳ 运行中';
+  
+  try {
+    const res = await fetch('/api/village/hooks/run', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ hookId, testData: window._hookTestData[hookId] })
+    });
+    const d = await res.json();
+    outputEl.textContent = d.output || '(无输出)';
+    outputEl.style.borderColor = d.exitCode === 0 ? 'var(--green)' : d.exitCode === 2 ? 'var(--red)' : 'var(--orange)';
+  } catch(e) {
+    outputEl.textContent = '错误: ' + e.message;
+    outputEl.style.borderColor = 'var(--red)';
+  }
+  
+  btn.disabled = false;
+  btn.textContent = '▶ 运行测试';
+}
+
+// Load rules
+async function loadRules() {
+  try {
+    const res = await fetch('/api/village/rules');
+    const rules = await res.json();
+    let html = '<div class="rules-grid">';
+    rules.forEach(r => {
+      html += `<div class="rule-card">
+        <h4>${r.title}</h4>
+        <div class="path">📂 ${r.path}</div>
+        <div class="preview">${r.content.replace(/^---[\s\S]*?---/, '').replace(/^#.*\n/, '').trim().substring(0, 200)}...</div>
+      </div>`;
+    });
+    html += '</div>';
+    document.getElementById('rules-content').innerHTML = html;
+  } catch(e) {
+    document.getElementById('rules-content').innerHTML = '<p style="color:var(--red)">加载失败</p>';
+  }
+}
+
+// Load docs
+async function loadDocs() {
+  try {
+    const res = await fetch('/api/village/docs');
+    const docs = await res.json();
+    const catNames = {
+      '_root': '📐 系统架构',
+      'planting': '🌱 种植体系',
+      'sales': '💹 销售机制',
+      'governance': '🏛️ 治理框架',
+      'operations': '📊 运营管理'
+    };
+    const order = ['_root', 'planting', 'sales', 'governance', 'operations'];
+    
+    let html = '';
+    order.forEach(cat => {
+      if (!docs[cat]) return;
+      html += `<div class="docs-group">
+        <h3>${catNames[cat] || cat} (${docs[cat].length})</h3>
+        <div class="docs-list">`;
+      docs[cat].forEach(d => {
+        html += `<div class="doc-item">
+          <div class="title">${d.title}</div>
+          <div class="file">📄 ${d.filename}</div>
+        </div>`;
+      });
+      html += '</div></div>';
+    });
+    document.getElementById('docs-content').innerHTML = html;
+  } catch(e) {
+    document.getElementById('docs-content').innerHTML = '<p style="color:var(--red)">加载失败</p>';
+  }
+}
+
+// ============================================================
+// Isometric Village Canvas
+// ============================================================
+function drawVillage() {
+  const canvas = document.getElementById('villageCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+  const W = canvas.width, H = canvas.height;
+  
+  // Clear
+  ctx.fillStyle = '#0f2618';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Draw grass texture
+  for (let i = 0; i < 200; i++) {
+    ctx.fillStyle = `rgba(76,175,80,${Math.random()*0.08})`;
+    ctx.fillRect(Math.random()*W, Math.random()*H, 2+Math.random()*4, 2+Math.random()*4);
+  }
+  
+  // Draw paths
+  ctx.strokeStyle = 'rgba(139,115,85,0.3)';
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(W*0.1, H*0.5); ctx.lineTo(W*0.9, H*0.5);
+  ctx.moveTo(W*0.5, H*0.1); ctx.lineTo(W*0.5, H*0.9);
+  ctx.moveTo(W*0.3, H*0.3); ctx.lineTo(W*0.7, H*0.7);
+  ctx.stroke();
+  
+  // Departments
+  const departments = [
+    { name: '🏛️ 村级领导', sub: '村长·技术总监·运营总监', x: 0.5, y: 0.15, color: '#FFD700', agents: 3 },
+    { name: '🌱 种植部', sub: '土壤·气象·种子·灌溉·防虫·农机·采收', x: 0.15, y: 0.35, color: '#4CAF50', agents: 8 },
+    { name: '📦 销售部', sub: '电商·直播·批发·物流·定价', x: 0.85, y: 0.35, color: '#E67E22', agents: 6 },
+    { name: '🎨 品牌部', sub: '包装设计·农旅融合', x: 0.15, y: 0.6, color: '#E91E63', agents: 3 },
+    { name: '🔍 质检部', sub: '食品安全·有机认证', x: 0.85, y: 0.6, color: '#E74C3C', agents: 3 },
+    { name: '💰 财务部', sub: '会计·成本分析', x: 0.3, y: 0.8, color: '#9B59B6', agents: 3 },
+    { name: '🏗️ 后勤部', sub: '仓储·土地·水利', x: 0.7, y: 0.8, color: '#00BCD4', agents: 4 },
+    { name: '🌿 生态部', sub: '可持续·培训', x: 0.5, y: 0.92, color: '#8BC34A', agents: 2 },
+  ];
+  
+  // Draw connection lines
+  ctx.strokeStyle = 'rgba(76,175,80,0.15)';
+  ctx.lineWidth = 2;
+  departments.forEach((d, i) => {
+    if (i === 0) return;
+    ctx.beginPath();
+    ctx.moveTo(departments[0].x * W, departments[0].y * H + 30);
+    ctx.lineTo(d.x * W, d.y * H - 20);
+    ctx.stroke();
+  });
+  
+  // Draw each department as isometric building
+  const time = Date.now() / 1000;
+  departments.forEach((d, i) => {
+    const cx = d.x * W;
+    const cy = d.y * H;
+    const bw = 120, bh = 70;
+    
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + bh/2 + 5, bw/2 + 10, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Building body (isometric box)
+    const roofH = 25;
+    // Front face
+    ctx.fillStyle = d.color + '40';
+    ctx.strokeStyle = d.color + '80';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - bw/2, cy - bh/4);
+    ctx.lineTo(cx - bw/2, cy + bh/4);
+    ctx.lineTo(cx, cy + bh/2);
+    ctx.lineTo(cx, cy);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    
+    // Right face
+    ctx.fillStyle = d.color + '30';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx, cy + bh/2);
+    ctx.lineTo(cx + bw/2, cy + bh/4);
+    ctx.lineTo(cx + bw/2, cy - bh/4);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    
+    // Roof
+    ctx.fillStyle = d.color + '50';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - roofH - bh/4);
+    ctx.lineTo(cx - bw/2, cy - bh/4);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx + bw/2, cy - bh/4);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    
+    // Particle effects (floating dots)
+    for (let p = 0; p < d.agents; p++) {
+      const angle = (time * 0.5 + p * (Math.PI * 2 / d.agents)) % (Math.PI * 2);
+      const radius = 50 + Math.sin(time + p) * 10;
+      const px = cx + Math.cos(angle) * radius;
+      const py = cy - roofH - 10 + Math.sin(angle) * radius * 0.3;
+      const alpha = 0.3 + Math.sin(time * 2 + p) * 0.2;
+      ctx.fillStyle = d.color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.name, cx, cy - roofH - bh/4 - 12);
+    
+    ctx.fillStyle = d.color;
+    ctx.font = '10px system-ui';
+    ctx.fillText(`${d.agents} 代理`, cx, cy - roofH - bh/4 - 0);
+    
+    // Sub text
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '9px system-ui';
+    const subLines = d.sub.split('·');
+    const subText = subLines.length > 4 ? subLines.slice(0, 4).join(' · ') + ' ...' : subLines.join(' · ');
+    ctx.fillText(subText, cx, cy + bh/2 + 18);
+  });
+  
+  // Title
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = 'bold 16px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('🏡 智慧农村 · AI 多代理协作全景图', W/2, 30);
+  
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '11px system-ui';
+  ctx.fillText('32 个代理 · 7 个部门 · 产销一体化管理', W/2, 48);
+  
+  // Animate
+  requestAnimationFrame(drawVillage);
+}
+
+// Init
+window.addEventListener('load', () => {
+  loadStats();
+  loadAgents();
+  loadSkills();
+  loadHooks();
+  loadRules();
+  loadDocs();
+  drawVillage();
+});
+
+window.addEventListener('resize', drawVillage);
+</script>
+</body>
+</html>

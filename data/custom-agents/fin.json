@@ -1,0 +1,22 @@
+{
+  "id": "fin",
+  "name": "财务部长",
+  "icon": "💰",
+  "dept": "财务部",
+  "tier": 2,
+  "sprite": "fin",
+  "zone": "village-hall",
+  "color": "#42a5f5",
+  "skills": [
+    "budget-review",
+    "cost-analysis"
+  ],
+  "description": "财务管理和预算执行",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-fin.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 2.2,
+  "createdAt": "2026-03-27T17:13:17.399Z",
+  "updatedAt": "2026-03-27T17:44:43.844Z"
+}

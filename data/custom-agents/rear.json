@@ -1,0 +1,22 @@
+{
+  "id": "rear",
+  "name": "后勤部长",
+  "icon": "🏗️",
+  "dept": "后勤部",
+  "tier": 2,
+  "sprite": "rear",
+  "zone": "warehouse",
+  "color": "#00bcd4",
+  "skills": [
+    "resource-check",
+    "training-plan"
+  ],
+  "description": "后勤保障和物资管理",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-rear.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.399Z",
+  "updatedAt": "2026-03-27T17:45:44.415Z"
+}

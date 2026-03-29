@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智慧农村管理系统 — 互动使用教程</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a1628;--card:#12233d;--card2:#162d4a;--border:#1e3a5f;--green:#4CAF50;--green2:#66BB6A;--brown:#8B7355;--gold:#FFD700;--red:#E74C3C;--blue:#3498DB;--purple:#9B59B6;--orange:#E67E22;--cyan:#00BCD4;--pink:#E91E63;--text:#e0e6ed;--muted:#7b8da0;--dark:#060d1a}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+
+/* Top bar */
+.top-bar{background:linear-gradient(135deg,#1a4731,#0a1628,#2d1b0e);padding:14px 40px;border-bottom:2px solid var(--green);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.top-bar h1{font-size:18px;color:#fff}
+.top-bar h1 span{color:var(--green)}
+.top-bar-links{display:flex;gap:10px}
+.top-bar a{color:var(--green);text-decoration:none;font-size:13px;padding:6px 14px;border:1px solid var(--green);border-radius:6px;transition:all .2s}
+.top-bar a:hover{background:var(--green);color:#fff}
+
+/* Layout */
+.layout{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:260px;background:var(--card);border-right:1px solid var(--border);padding:16px 0;overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px);flex-shrink:0}
+.sidebar h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:14px 18px 6px;margin-top:6px}
+.sidebar h3:first-child{margin-top:0}
+.sidebar a{display:block;padding:7px 18px;color:var(--text);text-decoration:none;font-size:13px;border-left:3px solid transparent;transition:all .12s;cursor:pointer}
+.sidebar a:hover{background:rgba(76,175,80,0.08);border-left-color:rgba(76,175,80,0.4)}
+.sidebar a.active{background:rgba(76,175,80,0.12);border-left-color:var(--green);color:var(--green);font-weight:600}
+
+/* Main content */
+.main{flex:1;padding:36px 50px;max-width:920px}
+.main h2{font-size:24px;font-weight:700;color:#fff;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.main h3{font-size:18px;font-weight:600;color:var(--green);margin:24px 0 10px}
+.main h4{font-size:15px;font-weight:600;color:var(--cyan);margin:18px 0 8px}
+.main p{margin-bottom:12px}
+.main ul,.main ol{margin:0 0 14px 22px}
+.main li{margin-bottom:5px}
+.main strong{color:#fff}
+.section{display:none}
+.section.active{display:block}
+
+/* Boxes */
+.info-box{background:rgba(52,152,219,0.08);border:1px solid rgba(52,152,219,0.25);border-radius:8px;padding:14px 18px;margin:14px 0}
+.info-box .label{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:4px}
+.warn-box{background:rgba(230,126,34,0.08);border:1px solid rgba(230,126,34,0.25);border-radius:8px;padding:14px 18px;margin:14px 0}
+.warn-box .label{font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;margin-bottom:4px}
+.tip-box{background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.25);border-radius:8px;padding:14px 18px;margin:14px 0}
+.tip-box .label{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:4px}
+
+/* Code */
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:14px;margin:12px 0;overflow-x:auto;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12.5px;line-height:1.6}
+code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:12.5px;background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px}
+pre code{background:none;padding:0}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th{background:rgba(76,175,80,0.12);color:var(--green);padding:9px 12px;text-align:left;font-weight:600;border:1px solid var(--border)}
+td{padding:7px 12px;border:1px solid var(--border)}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+/* Flow diagram */
+.flow{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:14px 0}
+.flow-title{font-size:13px;font-weight:700;color:var(--green);margin-bottom:14px;text-align:center}
+.flow-steps{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px}
+.flow-step{background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:8px 14px;text-align:center;min-width:100px;transition:all .3s}
+.flow-step .emoji{font-size:18px;display:block;margin-bottom:3px}
+.flow-step .name{font-size:11px;font-weight:600;color:#fff}
+.flow-step .desc{font-size:9px;color:var(--muted);margin-top:1px}
+.flow-arrow{color:var(--green);font-size:18px;font-weight:700}
+.flow-step.active-step{border-color:var(--green);background:rgba(76,175,80,0.25);transform:scale(1.08);box-shadow:0 0 12px rgba(76,175,80,0.3)}
+.flow-step.done-step{border-color:var(--green);background:rgba(76,175,80,0.15);opacity:0.8}
+
+/* Simulation */
+.sim-box{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:0;margin:18px 0;overflow:hidden;transition:border-color .3s}
+.sim-box.running{border-color:var(--green)}
+.sim-header{padding:16px 20px;background:var(--card2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sim-header h4{font-size:15px;color:#fff;margin:0}
+.sim-header .badge{font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700}
+.sim-body{padding:18px 20px}
+.sim-btn{background:var(--green);color:#fff;border:none;padding:10px 28px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:8px}
+.sim-btn:hover{background:#45a049;transform:translateY(-1px)}
+.sim-btn:disabled{background:#333;cursor:not-allowed;transform:none}
+.sim-log{margin-top:16px;max-height:420px;overflow-y:auto}
+.sim-step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);opacity:0;transform:translateX(-20px);transition:all .4s ease-out}
+.sim-step.visible{opacity:1;transform:translateX(0)}
+.sim-step .icon{font-size:24px;flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border-radius:8px}
+.sim-step .info{flex:1}
+.sim-step .agent-name{font-size:12px;color:var(--cyan);font-weight:600}
+.sim-step .action{font-size:13px;color:#fff;font-weight:600;margin:2px 0}
+.sim-step .detail{font-size:12px;color:var(--muted);line-height:1.5}
+.sim-step .timestamp{font-size:10px;color:var(--muted);margin-top:4px;font-family:monospace}
+.sim-result{margin-top:14px;padding:14px;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.25);border-radius:8px;display:none}
+.sim-result.show{display:block}
+
+/* Scenario cards */
+.scenario-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:14px 0}
+.scenario-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s}
+.scenario-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 4px 16px rgba(76,175,80,0.12)}
+.scenario-card .icon{font-size:26px;margin-bottom:6px}
+.scenario-card h5{font-size:13px;color:#fff;margin-bottom:3px}
+.scenario-card p{font-size:11px;color:var(--muted)}
+
+/* Chat-style demo */
+.chat-box{background:#0d1117;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:14px 0}
+.chat-header{background:var(--card2);padding:10px 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.chat-header .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.chat-messages{padding:16px;max-height:400px;overflow-y:auto}
+.chat-msg{margin-bottom:12px;display:flex;gap:10px;opacity:0;transform:translateY(8px);transition:all .3s}
+.chat-msg.visible{opacity:1;transform:translateY(0)}
+.chat-msg.user .bubble{background:rgba(52,152,219,0.15);border:1px solid rgba(52,152,219,0.3);border-radius:12px 12px 2px 12px;padding:10px 14px;max-width:75%}
+.chat-msg.system .bubble{background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.2);border-radius:12px 12px 12px 2px;padding:10px 14px;max-width:85%}
+.chat-msg .avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(255,255,255,0.05)}
+.chat-msg .sender{font-size:10px;font-weight:700;margin-bottom:3px}
+.chat-msg.user .sender{color:var(--blue)}
+.chat-msg.system .sender{color:var(--green)}
+.chat-msg .text{font-size:12.5px;line-height:1.6;white-space:pre-line}
+.chat-input-area{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.chat-input{flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px}
+.chat-input:focus{outline:none;border-color:var(--green)}
+.chat-send{background:var(--green);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+
+/* Interactive hook demo */
+.hook-demo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:14px 0}
+.hook-demo{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:all .3s}
+.hook-demo h5{font-size:14px;color:#fff;margin-bottom:4px}
+.hook-demo .desc{font-size:11px;color:var(--muted);margin-bottom:10px}
+.hook-demo .trigger-info{font-size:10px;color:var(--cyan);font-family:monospace;margin-bottom:8px}
+.hook-demo button{background:var(--green);color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;width:100%;transition:all .2s}
+.hook-demo button:hover{background:#45a049}
+.hook-demo button:disabled{background:#333;cursor:not-allowed}
+.hook-demo .output{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:8px;font-family:monospace;font-size:11px;white-space:pre-wrap;max-height:160px;overflow-y:auto;display:none;line-height:1.5}
+.hook-demo .status-icon{display:inline-block;margin-left:6px}
+
+/* Org chart */
+.org-chart{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin:14px 0;text-align:center;overflow-x:auto}
+.org-level{display:flex;justify-content:center;gap:16px;margin-bottom:8px;flex-wrap:wrap}
+.org-node{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:8px 14px;min-width:100px;transition:all .2s;cursor:default}
+.org-node:hover{border-color:var(--green);background:rgba(76,175,80,0.08)}
+.org-node .icon{font-size:20px}
+.org-node .name{font-size:11px;font-weight:600;color:#fff;margin-top:2px}
+.org-node .role{font-size:9px;color:var(--muted)}
+.org-connector{height:20px;position:relative}
+.org-connector::after{content:'';display:block;width:2px;height:20px;background:rgba(76,175,80,0.3);margin:0 auto}
+.org-tier1 .org-node{border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.06)}
+.org-tier2 .org-node{border-color:rgba(52,152,219,0.4);background:rgba(52,152,219,0.06)}
+.org-tier3 .org-node{border-color:rgba(155,89,182,0.3);background:rgba(155,89,182,0.04)}
+
+/* Timeline */
+.timeline{position:relative;margin:14px 0;padding-left:24px}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:rgba(76,175,80,0.2)}
+.tl-item{position:relative;padding:8px 0 16px 20px}
+.tl-item::before{content:'';position:absolute;left:-18px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg)}
+.tl-item .month{font-size:13px;font-weight:700;color:var(--green)}
+.tl-item .tasks{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* Progress */
+.progress-bar{width:100%;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .8s ease-out}
+
+/* Responsive */
+@media(max-width:900px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:static;display:flex;flex-wrap:wrap;padding:8px}
+  .sidebar h3{width:100%;padding:8px 12px 4px}
+  .sidebar a{flex:1;min-width:100px;text-align:center;border-left:none;border-bottom:2px solid transparent;padding:6px 8px;font-size:12px}
+  .sidebar a.active{border-bottom-color:var(--green);border-left:none}
+  .main{padding:16px}
+  .flow-steps{gap:4px}
+  .flow-step{min-width:80px;padding:6px 10px}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>🌾 <span>智慧农村管理系统</span> — 互动使用教程</h1>
+  <div class="top-bar-links">
+    <a href="/village">← 管理面板</a>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <h3>快速入门</h3>
+    <a class="active" onclick="go('overview')">📖 系统概述</a>
+    <a onclick="go('quickstart')">🚀 5分钟上手</a>
+    <a onclick="go('team')">👥 认识你的团队</a>
+    
+    <h3>互动模拟</h3>
+    <a onclick="go('sim-planting')">🌱 模拟: 种植规划</a>
+    <a onclick="go('sim-sales')">📦 模拟: 产品上市</a>
+    <a onclick="go('sim-emergency')">🚨 模拟: 应急处理</a>
+    <a onclick="go('chat-demo')">💬 对话演示</a>
+    
+    <h3>核心场景</h3>
+    <a onclick="go('planting')">🌾 年度种植规划</a>
+    <a onclick="go('selling')">💹 产品上市销售</a>
+    <a onclick="go('daily')">📊 日常运营管理</a>
+    <a onclick="go('emergency')">🚨 应急处理流程</a>
+    
+    <h3>参考手册</h3>
+    <a onclick="go('skills-ref')">⚡ 26 个工作流</a>
+    <a onclick="go('hooks-ref')">🔧 自动化验证</a>
+    <a onclick="go('calendar')">📅 年度时间表</a>
+    <a onclick="go('customize')">🛠️ 自定义指南</a>
+    <a onclick="go('faq')">❓ 常见问题</a>
+  </nav>
+
+  <main class="main">
+    <!-- ==================== OVERVIEW ==================== -->
+    <section class="section active" id="sec-overview">
+      <h2>📖 这套系统是什么？</h2>
+      
+      <p>简单来说：<strong>它是一个「虚拟村级管理团队」</strong>。</p>
+      <p>传统农村管理靠村干部一人身兼数职。这套系统把管理工作拆分成 <strong>32 个专业 AI 代理</strong>，覆盖从「种什么」到「卖给谁」的全链条。</p>
+
+      <div class="tip-box">
+        <div class="label">核心理念</div>
+        <p style="margin:0">你（村长/管理者）只需要提出问题和做决策，32 个 AI 代理会自动协作完成调研、分析、方案制定和执行跟踪。</p>
+      </div>
+
+      <h3>你的使用方式</h3>
+      <div class="flow">
+        <div class="flow-title">从提问到执行，只需 5 步</div>
+        <div class="flow-steps" id="overview-flow">
+          <div class="flow-step" id="of-1"><span class="emoji">💬</span><span class="name">1. 提问</span><span class="desc">今年种什么赚钱？</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="of-2"><span class="emoji">🔍</span><span class="name">2. 调研</span><span class="desc">代理自动收集数据</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="of-3"><span class="emoji">📋</span><span class="name">3. 方案</span><span class="desc">收到 2-3 套对比方案</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="of-4"><span class="emoji">✅</span><span class="name">4. 决策</span><span class="desc">你选一个方案</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" id="of-5"><span class="emoji">🚀</span><span class="name">5. 执行</span><span class="desc">代理分头执行</span></div>
+        </div>
+      </div>
+
+      <h3>与传统管理的对比</h3>
+      <table>
+        <tr><th>对比项</th><th>传统方式</th><th>AI 代理体系</th></tr>
+        <tr><td>种植决策</td><td>凭经验、跟风种</td><td>数据分析 + 市场调研 + 方案对比</td></tr>
+        <tr><td>销售渠道</td><td>等批发商上门</td><td>多渠道布局（电商+直播+团购+批发）</td></tr>
+        <tr><td>价格决策</td><td>随行就市</td><td>成本核算 + 动态定价 + 毛利监控</td></tr>
+        <tr><td>病虫害</td><td>发现再治</td><td>气象预警 + 提前预防 + 统防统治</td></tr>
+        <tr><td>财务管理</td><td>糊涂账</td><td>预算管理 + 成本分析 + 收益分配</td></tr>
+        <tr><td>品牌建设</td><td>没有品牌</td><td>品牌定位 + 包装设计 + 内容营销</td></tr>
+      </table>
+
+      <h3>系统统计</h3>
+      <div id="overview-stats" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--green)" id="stat-agents">-</div>
+          <div style="font-size:11px;color:var(--muted)">AI 代理</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--blue)" id="stat-skills">-</div>
+          <div style="font-size:11px;color:var(--muted)">工作流</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--orange)" id="stat-rules">-</div>
+          <div style="font-size:11px;color:var(--muted)">管理标准</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--red)" id="stat-hooks">-</div>
+          <div style="font-size:11px;color:var(--muted)">自动验证</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:var(--purple)" id="stat-docs">-</div>
+          <div style="font-size:11px;color:var(--muted)">文档</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== QUICKSTART ==================== -->
+    <section class="section" id="sec-quickstart">
+      <h2>🚀 5 分钟上手</h2>
+
+      <h3>第一步：安装环境</h3>
+      <pre><code># 1. 安装 Claude Code CLI
+npm install -g @anthropic-ai/claude-code
+
+# 2. 克隆项目仓库
+git clone &lt;repo-url&gt; my-village
+cd my-village
+
+# 3. 启动 Claude Code（它会自动读取 agents/ skills/ 等配置）
+claude</code></pre>
+
+      <h3>第二步：选一个场景开始</h3>
+      <div class="scenario-grid">
+        <div class="scenario-card" onclick="go('sim-planting')">
+          <div class="icon">🌱</div>
+          <h5>制定种植计划</h5>
+          <p>输入 /crop-plan，告诉系统你的土地情况</p>
+        </div>
+        <div class="scenario-card" onclick="go('sim-sales')">
+          <div class="icon">💹</div>
+          <h5>产品上市销售</h5>
+          <p>输入 /launch-product，新品上线全流程</p>
+        </div>
+        <div class="scenario-card" onclick="go('daily')">
+          <div class="icon">📊</div>
+          <h5>做季度计划</h5>
+          <p>输入 /seasonal-plan，生成农事日历</p>
+        </div>
+        <div class="scenario-card" onclick="go('chat-demo')">
+          <div class="icon">💬</div>
+          <h5>试试对话</h5>
+          <p>自然语言提问，系统自动调度代理</p>
+        </div>
+      </div>
+
+      <h3>第三步：理解协作模式</h3>
+      <div class="info-box">
+        <div class="label">用户驱动协作</div>
+        <p style="margin:0">系统遵循 <strong>「提问 → 方案 → 决策 → 草案 → 批准」</strong>的工作流，所有决策由你来做，代理只提供建议和执行。</p>
+      </div>
+
+      <h3>第四步：日常使用节奏</h3>
+      <table>
+        <tr><th>频率</th><th>做什么</th><th>工作流</th></tr>
+        <tr><td>每天</td><td>查看天气预报和农事提醒</td><td><code>/weather-alert</code></td></tr>
+        <tr><td>每周</td><td>检查田间情况和进度</td><td><code>/resource-check</code></td></tr>
+        <tr><td>每月</td><td>看财务报表和成本</td><td><code>/cost-analysis</code></td></tr>
+        <tr><td>每季</td><td>季度总结和下季规划</td><td><code>/seasonal-plan</code></td></tr>
+        <tr><td>每年</td><td>年度种植方案和预算</td><td><code>/crop-plan</code></td></tr>
+      </table>
+    </section>
+
+    <!-- ==================== TEAM ==================== -->
+    <section class="section" id="sec-team">
+      <h2>👥 认识你的团队</h2>
+      
+      <p>你不需要记住 32 个代理。<strong>你只需要跟 3 个人打交道：</strong></p>
+
+      <div class="org-chart">
+        <div class="org-level org-tier1">
+          <div class="org-node" style="border-color:rgba(255,215,0,0.6)">
+            <div class="icon">🏛️</div>
+            <div class="name">你（村长）</div>
+            <div class="role">最终决策者</div>
+          </div>
+        </div>
+        <div class="org-connector"></div>
+        <div class="org-level org-tier1">
+          <div class="org-node">
+            <div class="icon">🔬</div>
+            <div class="name">农业技术总监</div>
+            <div class="role">所有技术问题</div>
+          </div>
+          <div class="org-node">
+            <div class="icon">📊</div>
+            <div class="name">运营总监</div>
+            <div class="role">日常运营协调</div>
+          </div>
+        </div>
+        <div class="org-connector"></div>
+        <div class="org-level org-tier2">
+          <div class="org-node"><div class="icon">🌱</div><div class="name">种植部长</div><div class="role">7人团队</div></div>
+          <div class="org-node"><div class="icon">📦</div><div class="name">销售部长</div><div class="role">5人团队</div></div>
+          <div class="org-node"><div class="icon">🎨</div><div class="name">品牌部长</div><div class="role">2人团队</div></div>
+          <div class="org-node"><div class="icon">🔍</div><div class="name">质检部长</div><div class="role">2人团队</div></div>
+        </div>
+        <div class="org-connector"></div>
+        <div class="org-level org-tier2">
+          <div class="org-node"><div class="icon">💰</div><div class="name">财务部长</div><div class="role">2人团队</div></div>
+          <div class="org-node"><div class="icon">🏗️</div><div class="name">后勤部长</div><div class="role">3人团队</div></div>
+          <div class="org-node"><div class="icon">🌿</div><div class="name">生态部长</div><div class="role">1人团队</div></div>
+        </div>
+      </div>
+
+      <h3>部门详情</h3>
+      <table>
+        <tr><th>部门</th><th>负责人</th><th>专业人员</th><th>管什么</th></tr>
+        <tr><td>🌱 种植部</td><td>种植部长</td><td>土壤 / 气象 / 种子 / 灌溉 / 防虫 / 农机 / 采收</td><td>从选种到收获</td></tr>
+        <tr><td>📦 销售部</td><td>销售部长</td><td>电商 / 直播 / 批发 / 物流 / 定价</td><td>全渠道销售</td></tr>
+        <tr><td>🎨 品牌部</td><td>品牌部长</td><td>包装设计 / 农旅</td><td>品牌建设</td></tr>
+        <tr><td>🔍 质检部</td><td>质检部长</td><td>食品安全 / 有机认证</td><td>产品质量</td></tr>
+        <tr><td>💰 财务部</td><td>财务部长</td><td>会计 / 成本分析</td><td>资金管理</td></tr>
+        <tr><td>🏗️ 后勤部</td><td>后勤部长</td><td>仓储 / 土地规划 / 水利</td><td>基础设施</td></tr>
+        <tr><td>🌿 生态部</td><td>生态部长</td><td>培训师</td><td>可持续发展</td></tr>
+      </table>
+
+      <div class="tip-box">
+        <div class="label">协作规则</div>
+        <p style="margin:0">代理之间会自动协作 — 你说"想种草莓"，种植部长会自动找土壤专家、气象师评估，销售部长会自动找定价分析师看市场。你只管看结果、做决定。</p>
+      </div>
+    </section>
+
+    <!-- ==================== SIM: PLANTING ==================== -->
+    <section class="section" id="sec-sim-planting">
+      <h2>🌱 互动模拟：年度种植规划</h2>
+      <p>点击下方按钮，实时观看多个 AI 代理如何协作制定种植方案。</p>
+      
+      <div class="sim-box" id="sim-crop-plan">
+        <div class="sim-header">
+          <h4>📋 场景：200 亩村庄制定年度种植方案</h4>
+          <span class="badge" style="background:rgba(76,175,80,0.15);color:var(--green);border:1px solid rgba(76,175,80,0.3)" id="sim-cp-status">待启动</span>
+        </div>
+        <div class="sim-body">
+          <div style="margin-bottom:14px;padding:12px;background:rgba(52,152,219,0.08);border-radius:8px;font-size:13px">
+            <strong>你说：</strong>"我们村有 200 亩地（100亩水田、60亩旱地、40亩山地），去年种了双季稻和蔬菜，效益一般。今年想提高收入。"
+          </div>
+          <button class="sim-btn" id="sim-cp-btn" onclick="runSimulation('crop-plan','sim-crop-plan')">
+            ▶ 启动模拟
+          </button>
+          <div class="progress-bar" id="sim-cp-progress" style="display:none"><div class="progress-fill" style="width:0%"></div></div>
+          <div class="sim-log" id="sim-cp-log"></div>
+          <div class="sim-result" id="sim-cp-result">
+            <strong style="color:var(--green)">✅ 规划完成！</strong>
+            <p style="margin:8px 0 0;font-size:13px">种植部长已生成 3 套对比方案（稳健/增长/创新型），推荐增长型方案B，预期利润提升 46%。等待你的最终决策。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SIM: SALES ==================== -->
+    <section class="section" id="sec-sim-sales">
+      <h2>📦 互动模拟：产品上市销售</h2>
+      <p>草莓大棚即将采收，观看销售团队如何全链条协作。</p>
+      
+      <div class="sim-box" id="sim-product-launch">
+        <div class="sim-header">
+          <h4>🍓 场景：草莓大棚产品上市</h4>
+          <span class="badge" style="background:rgba(230,126,34,0.15);color:var(--orange);border:1px solid rgba(230,126,34,0.3)" id="sim-pl-status">待启动</span>
+        </div>
+        <div class="sim-body">
+          <div style="margin-bottom:14px;padding:12px;background:rgba(52,152,219,0.08);border-radius:8px;font-size:13px">
+            <strong>你说：</strong>"草莓大棚预计下周开始采收，估计产量 2000 斤/周，持续 4 个月。帮我安排销售。"
+          </div>
+          <button class="sim-btn" id="sim-pl-btn" onclick="runSimulation('product-launch','sim-product-launch')">
+            ▶ 启动模拟
+          </button>
+          <div class="progress-bar" id="sim-pl-progress" style="display:none"><div class="progress-fill" style="width:0%"></div></div>
+          <div class="sim-log" id="sim-pl-log"></div>
+          <div class="sim-result" id="sim-pl-result">
+            <strong style="color:var(--green)">✅ 上市方案就绪！</strong>
+            <p style="margin:8px 0 0;font-size:13px">四渠道联动（批发40%+电商30%+直播20%+采摘10%），预期周销售额 3.4 万元。直播+电商将带来最高毛利。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SIM: EMERGENCY ==================== -->
+    <section class="section" id="sec-sim-emergency">
+      <h2>🚨 互动模拟：应急处理</h2>
+      <p>选择一个应急场景，观看系统如何自动响应。</p>
+      
+      <div class="scenario-grid" style="margin-bottom:20px">
+        <div class="scenario-card" onclick="switchEmergency('weather')" id="em-card-weather" style="border-color:var(--green)">
+          <div class="icon">🌧️</div>
+          <h5>暴雨预警</h5>
+          <p>未来 48 小时持续暴雨，降雨量 120mm</p>
+        </div>
+        <div class="scenario-card" onclick="switchEmergency('pest')" id="em-card-pest">
+          <div class="icon">🐛</div>
+          <h5>病虫害爆发</h5>
+          <p>100 亩水稻发现稻飞虱大面积爆发</p>
+        </div>
+      </div>
+
+      <div class="sim-box" id="sim-emergency-weather">
+        <div class="sim-header">
+          <h4>🌧️ 暴雨应急响应</h4>
+          <span class="badge" style="background:rgba(231,76,60,0.15);color:var(--red);border:1px solid rgba(231,76,60,0.3)" id="sim-ew-status">待启动</span>
+        </div>
+        <div class="sim-body">
+          <div style="margin-bottom:14px;padding:12px;background:rgba(231,76,60,0.08);border-radius:8px;font-size:13px">
+            <strong>🔴 气象预警触发：</strong>未来 48 小时持续暴雨，累计降雨量 120mm，wind speed 8级
+          </div>
+          <button class="sim-btn" id="sim-ew-btn" onclick="runSimulation('emergency-weather','sim-emergency-weather')">
+            ▶ 启动应急模拟
+          </button>
+          <div class="progress-bar" id="sim-ew-progress" style="display:none"><div class="progress-fill" style="width:0%"></div></div>
+          <div class="sim-log" id="sim-ew-log"></div>
+          <div class="sim-result" id="sim-ew-result">
+            <strong style="color:var(--orange)">⚡ 应急响应完成</strong>
+            <p style="margin:8px 0 0;font-size:13px">需要你决策：是否启动全村抢收？预算动用应急储备金 8000 元？finance-director 建议：同意，在应急预算范围内。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-box" id="sim-emergency-pest" style="display:none">
+        <div class="sim-header">
+          <h4>🐛 病虫害爆发响应</h4>
+          <span class="badge" style="background:rgba(231,76,60,0.15);color:var(--red);border:1px solid rgba(231,76,60,0.3)" id="sim-ep-status">待启动</span>
+        </div>
+        <div class="sim-body">
+          <div style="margin-bottom:14px;padding:12px;background:rgba(231,76,60,0.08);border-radius:8px;font-size:13px">
+            <strong>🔴 虫害预警：</strong>100亩水稻田发现稻飞虱，密度超标 3 倍，属紧急等级
+          </div>
+          <button class="sim-btn" id="sim-ep-btn" onclick="runSimulation('pest-outbreak','sim-emergency-pest')">
+            ▶ 启动应急模拟
+          </button>
+          <div class="progress-bar" id="sim-ep-progress" style="display:none"><div class="progress-fill" style="width:0%"></div></div>
+          <div class="sim-log" id="sim-ep-log"></div>
+          <div class="sim-result" id="sim-ep-result">
+            <strong style="color:var(--green)">✅ 防治完成</strong>
+            <p style="margin:8px 0 0;font-size:13px">2 天内完成 100 亩统防统治，3 天后复查虫口密度下降 85%，总花费 8000 元（应急预算内）。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CHAT DEMO ==================== -->
+    <section class="section" id="sec-chat-demo">
+      <h2>💬 对话交互演示</h2>
+      <p>选择一个预设场景，观看你和系统之间的对话流程：</p>
+
+      <div class="scenario-grid" style="margin-bottom:16px">
+        <div class="scenario-card" onclick="playChat('strawberry')">
+          <div class="icon">🍓</div>
+          <h5>可以种草莓吗？</h5>
+          <p>评估可行性全流程</p>
+        </div>
+        <div class="scenario-card" onclick="playChat('pricing')">
+          <div class="icon">💰</div>
+          <h5>番茄怎么定价？</h5>
+          <p>多渠道定价策略</p>
+        </div>
+        <div class="scenario-card" onclick="playChat('cost')">
+          <div class="icon">📊</div>
+          <h5>这个月花了多少？</h5>
+          <p>月度成本分析</p>
+        </div>
+      </div>
+
+      <div class="chat-box" id="chat-container">
+        <div class="chat-header">
+          <span class="dot"></span>
+          智慧农村管理系统 — 点击上方场景卡片开始对话
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+            👆 请选择一个场景查看对话演示
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PLANTING ==================== -->
+    <section class="section" id="sec-planting">
+      <h2>🌾 场景：年度种植规划</h2>
+      <p><strong>时间</strong>：每年 11-12 月 ｜ <strong>牵头</strong>：planting-director</p>
+
+      <h3>标准工作流程</h3>
+      <div class="flow">
+        <div class="flow-steps">
+          <div class="flow-step"><span class="emoji">🧪</span><span class="name">/soil-analysis</span><span class="desc">检测土壤</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">💹</span><span class="name">/market-analysis</span><span class="desc">市场调研</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">🔄</span><span class="name">/rotation-plan</span><span class="desc">轮作检查</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">📋</span><span class="name">/crop-plan</span><span class="desc">生成方案</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">💰</span><span class="name">/budget-review</span><span class="desc">预算核算</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">📅</span><span class="name">/seasonal-plan</span><span class="desc">生成日历</span></div>
+        </div>
+      </div>
+
+      <h3>完整示例</h3>
+      <pre><code>你输入：/crop-plan 蔬菜 春季
+
+系统会：
+  1. planting-director（种植部长）接手
+  2. 调用 soil-expert 查看土壤数据
+  3. 调用 meteorologist 查看气候条件
+  4. 调用 pricing-analyst 查看市场行情
+  5. 给你 2-3 套方案（稳健型/增长型/创新型）
+  6. 你选一个，系统输出详细执行计划
+
+产出文档：
+  ✅ 年度种植方案（使用 crop-plan-template.md 模板）
+  ✅ 全年农事日历
+  ✅ 农资采购清单
+  ✅ 年度预算表</code></pre>
+
+      <div class="warn-box">
+        <div class="label">轮作提醒</div>
+        <p style="margin:0">系统内置 <code>validate-rotation</code> Hook，如果你尝试在去年种番茄的地块再种茄子（同属茄科），系统会自动阻断并警告。</p>
+      </div>
+
+      <div class="tip-box">
+        <div class="label">试一试</div>
+        <p style="margin:0">→ <a onclick="go('sim-planting')" style="color:var(--green);cursor:pointer;text-decoration:underline">点击这里进入「种植规划」互动模拟</a></p>
+      </div>
+    </section>
+
+    <!-- ==================== SELLING ==================== -->
+    <section class="section" id="sec-selling">
+      <h2>💹 场景：产品上市销售</h2>
+      <p><strong>时间</strong>：采收前 2-4 周 ｜ <strong>牵头</strong>：sales-director</p>
+
+      <h3>工作流程</h3>
+      <div class="flow">
+        <div class="flow-steps">
+          <div class="flow-step"><span class="emoji">📅</span><span class="name">/harvest-schedule</span><span class="desc">确认采收</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">🔍</span><span class="name">/quality-check</span><span class="desc">质量检测</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">💰</span><span class="name">/pricing-strategy</span><span class="desc">定价策略</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">📢</span><span class="name">/launch-product</span><span class="desc">产品上线</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">🎬</span><span class="name">/livestream-plan</span><span class="desc">直播带货</span></div>
+        </div>
+      </div>
+
+      <h3>渠道分配策略</h3>
+      <table>
+        <tr><th>渠道</th><th>占比</th><th>毛利率</th><th>适合什么</th><th>负责代理</th></tr>
+        <tr><td>批发市场</td><td>30-40%</td><td>15-25%</td><td>大宗走量</td><td>wholesale-expert</td></tr>
+        <tr><td>电商平台</td><td>20-30%</td><td>30-40%</td><td>精品/特色</td><td>ecommerce-operator</td></tr>
+        <tr><td>直播带货</td><td>15-20%</td><td>35-50%</td><td>高颜值产品</td><td>livestream-seller</td></tr>
+        <tr><td>社区团购</td><td>10-15%</td><td>25-35%</td><td>日常蔬菜</td><td>ecommerce-operator</td></tr>
+        <tr><td>采摘体验</td><td>5-10%</td><td>50-70%</td><td>水果类</td><td>agritourism-expert</td></tr>
+      </table>
+
+      <h3>定价机制</h3>
+      <pre><code>定价公式：
+  渠道终端价 = 成本价 x (1 + 目标毛利率) x 渠道系数
+
+以草莓为例（成本 6 元/斤）：
+  批发：6 x 1.5 x 1.0 = 9 元/斤    → 实际 15-20 元
+  电商：6 x 1.5 x 1.8 = 16.2 元/斤 → 定价 29.9 元/500g
+  直播：6 x 1.5 x 1.5 = 13.5 元/斤 → 定价 35.9 元/1kg
+  采摘：6 x 1.5 x 2.5 = 22.5 元/斤 → 定价 60 元/人
+
+系统自动检查：
+  ✅ 毛利率 > 10% → 正常
+  ⚠️ 毛利率 < 10% → 警告
+  ❌ 售价 < 成本  → 阻断（需审批）</code></pre>
+    </section>
+
+    <!-- ==================== DAILY ==================== -->
+    <section class="section" id="sec-daily">
+      <h2>📊 日常运营管理</h2>
+      
+      <h3>日常节奏</h3>
+      <table>
+        <tr><th>频率</th><th>内容</th><th>工作流</th></tr>
+        <tr><td>每天</td><td>气象预报 + 农事提醒</td><td><code>/weather-alert</code></td></tr>
+        <tr><td>每周</td><td>本周回顾 + 下周安排</td><td><code>/resource-check</code></td></tr>
+        <tr><td>每月</td><td>财务报表 + 成本分析</td><td><code>/cost-analysis</code> + <code>/budget-review</code></td></tr>
+        <tr><td>每季</td><td>季度总结 + 下季计划</td><td><code>/seasonal-plan</code></td></tr>
+        <tr><td>每年</td><td>年度规划 + 预算编制</td><td><code>/crop-plan</code> + <code>/budget-review</code></td></tr>
+      </table>
+
+      <h3>决策权限</h3>
+      <table>
+        <tr><th>金额/事项</th><th>谁能批</th><th>时限</th></tr>
+        <tr><td>< 1,000 元</td><td>专业代理自行决定</td><td>即时</td></tr>
+        <tr><td>1,000 - 5,000</td><td>部门负责人审批</td><td>1天</td></tr>
+        <tr><td>5,000 - 20,000</td><td>运营总监审批</td><td>3天</td></tr>
+        <tr><td>20,000 - 50,000</td><td>村长审批</td><td>7天</td></tr>
+        <tr><td>> 50,000 元</td><td>村长 + 村民代表会议</td><td>14天</td></tr>
+      </table>
+
+      <h3>常用工作流快速入口</h3>
+      <div class="scenario-grid">
+        <div class="scenario-card"><div class="icon">🌤️</div><h5>/weather-alert</h5><p>每日气象预警，自动推送</p></div>
+        <div class="scenario-card"><div class="icon">🐛</div><h5>/pest-alert</h5><p>病虫害监测预警</p></div>
+        <div class="scenario-card"><div class="icon">📦</div><h5>/resource-check</h5><p>库存/设备/资金盘点</p></div>
+        <div class="scenario-card"><div class="icon">💰</div><h5>/cost-analysis</h5><p>月度成本分析</p></div>
+      </div>
+    </section>
+
+    <!-- ==================== EMERGENCY ==================== -->
+    <section class="section" id="sec-emergency">
+      <h2>🚨 应急处理流程</h2>
+      
+      <h3>暴雨来袭</h3>
+      <div class="flow">
+        <div class="flow-steps">
+          <div class="flow-step" style="border-color:var(--red)"><span class="emoji">🌧️</span><span class="name">气象预警</span><span class="desc">meteorologist</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">📋</span><span class="name">评估损失</span><span class="desc">planting-director</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">🚜</span><span class="name">抢收调度</span><span class="desc">machinery-expert</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">💧</span><span class="name">排水防涝</span><span class="desc">irrigation-engineer</span></div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step"><span class="emoji">📊</span><span class="name">灾后评估</span><span class="desc">finance-director</span></div>
+        </div>
+      </div>
+
+      <h3>食品安全事故</h3>
+      <div class="warn-box">
+        <div class="label">最严重情况</div>
+        <p style="margin:0">如果检测发现农残超标，系统会<strong>立即阻断出货</strong>（validate-quality hook），并启动追溯流程：定位问题批次 → 召回已售产品 → 查找根本原因 → 整改复检 → 恢复出货。</p>
+      </div>
+
+      <div class="tip-box">
+        <div class="label">试一试</div>
+        <p style="margin:0">→ <a onclick="go('sim-emergency')" style="color:var(--green);cursor:pointer;text-decoration:underline">点击这里进入应急处理互动模拟</a></p>
+      </div>
+    </section>
+
+    <!-- ==================== SKILLS REF ==================== -->
+    <section class="section" id="sec-skills-ref">
+      <h2>⚡ 26 个工作流速查表</h2>
+      
+      <h3>🌾 种植管理（8个）</h3>
+      <table>
+        <tr><th>命令</th><th>用途</th><th>时机</th></tr>
+        <tr><td><code>/crop-plan</code></td><td>年度种植方案</td><td>每年 11-12 月</td></tr>
+        <tr><td><code>/soil-analysis</code></td><td>土壤检测分析</td><td>每季度</td></tr>
+        <tr><td><code>/rotation-plan</code></td><td>轮作方案</td><td>制定计划前</td></tr>
+        <tr><td><code>/seed-select</code></td><td>品种选择</td><td>播种前 2-3 月</td></tr>
+        <tr><td><code>/fertilizer-plan</code></td><td>施肥方案</td><td>各生长阶段</td></tr>
+        <tr><td><code>/irrigation-plan</code></td><td>灌溉方案</td><td>干旱期/新设施</td></tr>
+        <tr><td><code>/pest-alert</code></td><td>病虫害预警</td><td>全年监测</td></tr>
+        <tr><td><code>/harvest-schedule</code></td><td>采收排期</td><td>成熟前 2 周</td></tr>
+      </table>
+
+      <h3>💹 销售管理（6个）</h3>
+      <table>
+        <tr><th>命令</th><th>用途</th><th>时机</th></tr>
+        <tr><td><code>/market-analysis</code></td><td>市场调研</td><td>年度规划/新品前</td></tr>
+        <tr><td><code>/pricing-strategy</code></td><td>定价策略</td><td>上市前/价格波动</td></tr>
+        <tr><td><code>/channel-plan</code></td><td>渠道规划</td><td>年度/新品上线</td></tr>
+        <tr><td><code>/launch-product</code></td><td>产品上市</td><td>新品发布</td></tr>
+        <tr><td><code>/brand-build</code></td><td>品牌建设</td><td>持续进行</td></tr>
+        <tr><td><code>/livestream-plan</code></td><td>直播策划</td><td>每周</td></tr>
+      </table>
+
+      <h3>📊 运营管理（6个）</h3>
+      <table>
+        <tr><th>命令</th><th>用途</th><th>时机</th></tr>
+        <tr><td><code>/seasonal-plan</code></td><td>季度计划</td><td>每季度初</td></tr>
+        <tr><td><code>/budget-review</code></td><td>预算评审</td><td>每月/每季</td></tr>
+        <tr><td><code>/cost-analysis</code></td><td>成本分析</td><td>每月</td></tr>
+        <tr><td><code>/resource-check</code></td><td>资源盘点</td><td>每月/紧急时</td></tr>
+        <tr><td><code>/weather-alert</code></td><td>气象预警</td><td>自动触发</td></tr>
+        <tr><td><code>/training-plan</code></td><td>培训计划</td><td>每季度</td></tr>
+      </table>
+
+      <h3>✅ 质量认证（3个）+ 🤝 团队协调（3个）</h3>
+      <table>
+        <tr><th>命令</th><th>用途</th><th>时机</th></tr>
+        <tr><td><code>/quality-check</code></td><td>质量检测</td><td>出货前/例行</td></tr>
+        <tr><td><code>/organic-audit</code></td><td>有机认证审核</td><td>认证期</td></tr>
+        <tr><td><code>/food-safety-review</code></td><td>食品安全评审</td><td>定期/事故后</td></tr>
+        <tr><td><code>/team-planting</code></td><td>种植团队协同</td><td>农忙期</td></tr>
+        <tr><td><code>/team-sales</code></td><td>销售团队协同</td><td>上市期</td></tr>
+        <tr><td><code>/team-harvest</code></td><td>采收团队协同</td><td>采收期</td></tr>
+      </table>
+    </section>
+
+    <!-- ==================== HOOKS REF ==================== -->
+    <section class="section" id="sec-hooks-ref">
+      <h2>🔧 自动化验证（Hooks）</h2>
+      <p>这些验证在关键操作时<strong>自动运行</strong>。点击按钮可以实际运行测试。</p>
+
+      <div class="hook-demo-grid" id="hook-demos">
+        <div class="hook-demo" id="hd-validate-rotation">
+          <h5>🔄 轮作合规检查</h5>
+          <div class="trigger-info">触发: 提交种植计划</div>
+          <div class="desc">检查是否违反轮作规则，茄科连作→阻断</div>
+          <button onclick="runHookDemo('validate-rotation')">▶ 运行测试</button>
+          <div class="output" id="hd-out-validate-rotation"></div>
+        </div>
+        <div class="hook-demo" id="hd-validate-quality">
+          <h5>🔍 质量报告验证</h5>
+          <div class="trigger-info">触发: 检测报告提交</div>
+          <div class="desc">故意提交不完整报告，看系统是否阻断</div>
+          <button onclick="runHookDemo('validate-quality')">▶ 运行测试</button>
+          <div class="output" id="hd-out-validate-quality"></div>
+        </div>
+        <div class="hook-demo" id="hd-validate-pricing">
+          <h5>💰 定价合理性检查</h5>
+          <div class="trigger-info">触发: 定价变更</div>
+          <div class="desc">草莓成本6元/kg，售价20元/kg，毛利70%</div>
+          <button onclick="runHookDemo('validate-pricing')">▶ 运行测试</button>
+          <div class="output" id="hd-out-validate-pricing"></div>
+        </div>
+        <div class="hook-demo" id="hd-weather-alert-trigger">
+          <h5>🌧️ 天气预警触发</h5>
+          <div class="trigger-info">触发: 天气数据更新</div>
+          <div class="desc">气温2度C + 降雨60mm，测试预警机制</div>
+          <button onclick="runHookDemo('weather-alert-trigger')">▶ 运行测试</button>
+          <div class="output" id="hd-out-weather-alert-trigger"></div>
+        </div>
+        <div class="hook-demo" id="hd-validate-expense">
+          <h5>💸 支出审批检查</h5>
+          <div class="trigger-info">触发: 支出记录提交</div>
+          <div class="desc">25000元支出无村长审批，是否阻断？</div>
+          <button onclick="runHookDemo('validate-expense')">▶ 运行测试</button>
+          <div class="output" id="hd-out-validate-expense"></div>
+        </div>
+        <div class="hook-demo" id="hd-validate-brand-assets">
+          <h5>🎨 品牌资产规范</h5>
+          <div class="trigger-info">触发: 品牌资产上传</div>
+          <div class="desc">上传文件名含大写字母，检查命名规范</div>
+          <button onclick="runHookDemo('validate-brand-assets')">▶ 运行测试</button>
+          <div class="output" id="hd-out-validate-brand-assets"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CALENDAR ==================== -->
+    <section class="section" id="sec-calendar">
+      <h2>📅 一年运营时间表</h2>
+      
+      <div class="timeline">
+        <div class="tl-item"><div class="month">1月 — 年度总结 + 备春耕</div><div class="tasks">大棚管理 · 育苗准备 · 年货节 · /seasonal-plan /budget-review</div></div>
+        <div class="tl-item"><div class="month">2月 — 春耕启动</div><div class="tasks">春耕备耕 · 育苗 · 农资采购 · /seed-select /crop-plan</div></div>
+        <div class="tl-item"><div class="month">3月 — 春播春管</div><div class="tasks">春播 · 果树春管 · 草莓旺季 · /soil-analysis /pest-alert</div></div>
+        <div class="tl-item"><div class="month">4月 — 定植插秧</div><div class="tasks">插秧 · 定植 · 亲子农旅 · /irrigation-plan /team-planting</div></div>
+        <div class="tl-item"><div class="month">5月 — 田管防虫</div><div class="tasks">田间管理 · 防虫第一波 · 618预热 · /pest-alert /market-analysis</div></div>
+        <div class="tl-item"><div class="month">6月 — 早稻收割</div><div class="tasks">早稻收割 · 换茬 · 618大促 · /harvest-schedule /launch-product</div></div>
+        <div class="tl-item"><div class="month">7月 — 盛夏管理</div><div class="tasks">盛夏管理 · 抗旱 · 直播发力 · /weather-alert /livestream-plan</div></div>
+        <div class="tl-item"><div class="month">8月 — 秋播启动</div><div class="tasks">秋播 · 葡萄采收 · 丰收节准备 · /channel-plan /team-harvest</div></div>
+        <div class="tl-item"><div class="month">9月 — 丰收季</div><div class="tasks">丰收季 · 草莓定植 · 国庆备货 · /pricing-strategy /quality-check</div></div>
+        <div class="tl-item"><div class="month">10月 — 秋收冬播</div><div class="tasks">秋收 · 冬播 · 双11预热 · /team-harvest /brand-build</div></div>
+        <div class="tl-item"><div class="month">11月 — 大促冲刺</div><div class="tasks">冬季大棚 · 双11/双12 · /cost-analysis /budget-review</div></div>
+        <div class="tl-item"><div class="month">12月 — 总结规划</div><div class="tasks">果树冬剪 · 土壤改良 · 年货备货 · /seasonal-plan /crop-plan</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== CUSTOMIZE ==================== -->
+    <section class="section" id="sec-customize">
+      <h2>🛠️ 自定义你的系统</h2>
+      
+      <h3>修改代理</h3>
+      <pre><code># 添加新代理：在 village-system/agents/ 目录下创建 .md 文件
+# 例如添加一个"水产养殖专家"
+
+cat > village-system/agents/aquaculture-expert.md << 'EOF'
+---
+name: aquaculture-expert
+description: "水产养殖专业代理，负责稻田养鱼/虾/蟹的技术指导"
+model: sonnet
+tools: Read, Glob, Grep, Write
+maxTurns: 12
+---
+
+# 水产养殖专家
+
+## 职责范围
+1. 稻虾共作技术指导
+2. 鱼苗选种和放养密度
+3. 水质监测和调控
+4. 病害防治
+EOF</code></pre>
+
+      <h3>添加新工作流</h3>
+      <pre><code># 在 village-system/skills/ 下创建目录和 SKILL.md
+mkdir -p village-system/skills/aquaculture-plan
+
+cat > village-system/skills/aquaculture-plan/SKILL.md << 'EOF'
+---
+name: aquaculture-plan
+description: "水产养殖规划 - 稻田综合种养方案"
+user_invoke: true
+tools: Read, Glob, Grep, Write
+argument_hint: "[养殖品种] [面积]"
+---
+
+## 工作流步骤
+1. 调查水源条件和水质
+2. 评估适合的养殖品种
+3. 制定放养密度和时间
+4. 制定饲料和水质管理方案
+5. 预估产量和收益
+EOF</code></pre>
+
+      <h3>修改验证规则</h3>
+      <pre><code># Hook 脚本在 village-system/hooks/ 目录下
+# 它们是标准的 bash 脚本，接收文件路径作为参数
+
+# 例如修改支出审批门槛：
+# 打开 village-system/hooks/validate-expense.sh
+# 找到金额阈值，修改为你需要的金额</code></pre>
+
+      <h3>项目结构速览</h3>
+      <pre><code>village-system/
+  agents/          # 32 个代理定义 (.md 文件)
+  skills/          # 26 个工作流 (每个一个目录+SKILL.md)
+  rules/           # 8 个管理标准
+  hooks/           # 6 个自动化验证脚本 (.sh)
+  templates/       # 3 个文档模板
+  docs/
+    architecture.md        # 系统架构总览
+    usage-guide.md         # 使用指南
+    planting/              # 种植体系文档 (5份)
+    sales/                 # 销售机制文档 (5份)
+    governance/            # 治理框架 (3份)
+    operations/            # 运营管理 (3份)</code></pre>
+    </section>
+
+    <!-- ==================== FAQ ==================== -->
+    <section class="section" id="sec-faq">
+      <h2>❓ 常见问题</h2>
+
+      <h4>Q: 需要什么前置条件？</h4>
+      <p>安装 <code>Claude Code CLI</code>（需要 Anthropic API 密钥），Git，以及可选的 jq 和 Python。</p>
+
+      <h4>Q: 我不懂技术，能用吗？</h4>
+      <p><strong>完全可以。</strong>只需要用自然语言描述你想做什么，比如"我想看看今年种什么赚钱"。</p>
+
+      <h4>Q: 数据从哪里来？</h4>
+      <p>土壤数据需要实际检测后录入；市场价格代理可以联网查询；天气数据可对接气象API；历史数据需逐步积累。系统越用越准。</p>
+
+      <h4>Q: 一个人能管理吗？</h4>
+      <p><strong>可以。</strong>这就是设计初衷 — 1-2 人借助 AI 代理完成一个专业团队的工作。</p>
+
+      <h4>Q: 能跟现有系统对接吗？</h4>
+      <p>可以。代理的工具权限（Read/Write/Bash等）允许它们读写外部系统的数据文件。如果有 API 接口，可以通过 Bash 工具调用 curl 对接。</p>
+
+      <h4>Q: 这套体系和原来的 Game Studios 有什么关系？</h4>
+      <table>
+        <tr><th>Game Studios</th><th>农村管理系统</th></tr>
+        <tr><td>48 Agents</td><td>32 Agents（精简但覆盖全链条）</td></tr>
+        <tr><td>37 Skills</td><td>26 Skills（聚焦农业产销）</td></tr>
+        <tr><td>Game Pillars</td><td>村庄发展支柱（因地制宜、产销一体等）</td></tr>
+        <tr><td>Sprint Plan</td><td>农事日历 / 季度计划</td></tr>
+        <tr><td>GDD</td><td>种植方案 / 销售方案</td></tr>
+        <tr><td>QA Testing</td><td>质量检测 / 安全检查</td></tr>
+      </table>
+
+      <h4>Q: 还有什么可以扩展的？</h4>
+      <ul>
+        <li>对接物联网传感器（温度/湿度/土壤水分实时数据）</li>
+        <li>接入电商 API 实现自动化库存管理</li>
+        <li>添加 GPS 地块管理系统</li>
+        <li>构建村民培训在线课程</li>
+        <li>对接政府农业补贴申报系统</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ============================================================
+// Navigation
+// ============================================================
+function go(id) {
+  document.querySelectorAll('.main .section').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  const link = document.querySelector(`.sidebar a[onclick="go('${id}')"]`);
+  if (link) link.classList.add('active');
+  window.scrollTo(0, 0);
+  
+  // Animate overview flow steps
+  if (id === 'overview') animateFlowSteps();
+}
+
+// ============================================================
+// Load Stats
+// ============================================================
+async function loadStats() {
+  try {
+    const res = await fetch('/api/village/stats');
+    const d = await res.json();
+    document.getElementById('stat-agents').textContent = d.agentCount;
+    document.getElementById('stat-skills').textContent = d.skillCount;
+    document.getElementById('stat-rules').textContent = d.ruleCount;
+    document.getElementById('stat-hooks').textContent = d.hookCount;
+    document.getElementById('stat-docs').textContent = d.docCount;
+  } catch(e) { console.error(e); }
+}
+
+// ============================================================
+// Simulation Engine
+// ============================================================
+async function runSimulation(scenario, containerId) {
+  const container = document.getElementById(containerId);
+  const btn = container.querySelector('.sim-btn');
+  const statusEl = container.querySelector('[id$="-status"]');
+  const progressBar = container.querySelector('[id$="-progress"]');
+  const progressFill = progressBar?.querySelector('.progress-fill');
+  const logEl = container.querySelector('[id$="-log"]');
+  const resultEl = container.querySelector('[id$="-result"]');
+  
+  btn.disabled = true;
+  btn.innerHTML = '⏳ 模拟运行中...';
+  container.classList.add('running');
+  if (statusEl) { statusEl.textContent = '运行中'; statusEl.style.background = 'rgba(76,175,80,0.15)'; statusEl.style.color = 'var(--green)'; statusEl.style.borderColor = 'rgba(76,175,80,0.3)'; }
+  if (progressBar) progressBar.style.display = 'block';
+  logEl.innerHTML = '';
+  if (resultEl) resultEl.classList.remove('show');
+  
+  try {
+    const res = await fetch('/api/village/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario })
+    });
+    const data = await res.json();
+    
+    if (data.error) {
+      logEl.innerHTML = '<p style="color:var(--red)">Error: ' + data.error + '</p>';
+      return;
+    }
+    
+    const steps = data.steps || [];
+    let elapsed = 0;
+    
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const delay = step.delay || 600;
+      await sleep(delay);
+      elapsed += delay;
+      
+      const pct = Math.round(((i + 1) / steps.length) * 100);
+      if (progressFill) progressFill.style.width = pct + '%';
+      
+      const stepEl = document.createElement('div');
+      stepEl.className = 'sim-step';
+      stepEl.innerHTML = `
+        <div class="icon">${step.icon}</div>
+        <div class="info">
+          <div class="agent-name">${step.agent}</div>
+          <div class="action">${step.action}</div>
+          <div class="detail">${step.detail}</div>
+          <div class="timestamp">+${(elapsed/1000).toFixed(1)}s</div>
+        </div>
+      `;
+      logEl.appendChild(stepEl);
+      // Trigger animation
+      requestAnimationFrame(() => stepEl.classList.add('visible'));
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    
+    await sleep(400);
+    if (resultEl) resultEl.classList.add('show');
+    if (statusEl) { statusEl.textContent = '完成'; }
+    
+  } catch(e) {
+    logEl.innerHTML = '<p style="color:var(--red)">Network error: ' + e.message + '</p>';
+  }
+  
+  btn.disabled = false;
+  btn.innerHTML = '🔄 重新模拟';
+  container.classList.remove('running');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============================================================
+// Emergency scenario switch
+// ============================================================
+function switchEmergency(type) {
+  document.getElementById('sim-emergency-weather').style.display = type === 'weather' ? 'block' : 'none';
+  document.getElementById('sim-emergency-pest').style.display = type === 'pest' ? 'block' : 'none';
+  document.getElementById('em-card-weather').style.borderColor = type === 'weather' ? 'var(--green)' : 'var(--border)';
+  document.getElementById('em-card-pest').style.borderColor = type === 'pest' ? 'var(--green)' : 'var(--border)';
+}
+
+// ============================================================
+// Chat Demo
+// ============================================================
+const chatScripts = {
+  strawberry: [
+    { role: 'user', avatar: '👤', sender: '你（村长）', text: '今年想种草莓，可行吗？我们有 20 亩旱地可以用。' },
+    { role: 'system', avatar: '🏛️', sender: 'village-chief', text: '好的，让种植部和销售部分别评估草莓种植可行性。' },
+    { role: 'system', avatar: '🧪', sender: 'soil-expert', text: '旱地土壤检测结果：\n  pH 6.2 ✅（草莓适宜 5.5-6.8）\n  有机质 2.3% ⚠️（偏低，建议增施有机肥）\n  排水良好 ✅\n结论：土壤条件基本适合。' },
+    { role: 'system', avatar: '🌤️', sender: 'meteorologist', text: '当地气候分析：\n  冬季最低 -3°C → 需要建大棚\n  年均温 18°C ✅\n  光照充足 ✅\n结论：气候适合，大棚种植最佳。' },
+    { role: 'system', avatar: '🌾', sender: 'seed-expert', text: '品种推荐：\n  1. 红颜 — 果大味甜，市场认可度高\n  2. 章姬 — 产量稳定，适合新手\n  3. 白雪公主 — 溢价高但技术要求高\n建议：首次种植选红颜+章姬搭配。' },
+    { role: 'system', avatar: '💹', sender: 'pricing-analyst', text: '草莓市场分析：\n  批发均价 15-20 元/斤（行情看涨 +15%）\n  电商均价 30-40 元/斤\n  毛利率 50-70% ✅\n  本地竞争：方圆 50km 内无大型草莓园\n结论：市场前景好。' },
+    { role: 'system', avatar: '💰', sender: 'finance-director', text: '投入估算（20 亩大棚草莓）：\n  大棚建设：48 万（2.4万/亩）\n  种苗+肥料：8 万\n  灌溉设施：6 万\n  人工：12 万/年\n  总投入：74 万\n  预期年收入：120 万\n  回本周期：1.5 年' },
+    { role: 'system', avatar: '🏛️', sender: 'village-chief', text: '综合评估汇总：\n  ✅ 技术可行（需建大棚，土壤适合）\n  ✅ 市场看好（毛利率 60%，本地无竞争）\n  ⚠️ 投入较大（74万，建议分期）\n\n🎯 建议：先做 10 亩试点（投入减半），成功后第二年扩大到 20 亩。这样风险可控，还能积累经验。\n\n请问你要继续制定详细方案吗？' },
+    { role: 'user', avatar: '👤', sender: '你（村长）', text: '好，先做 10 亩。出个详细方案。' },
+    { role: 'system', avatar: '🌱', sender: 'planting-director', text: '收到！已启动 /crop-plan 工作流，将在 10 分钟内生成完整方案，包括：\n  📋 种植方案（品种配比、地块分配）\n  📅 全年农事日历\n  📦 农资采购清单\n  💰 分阶段预算表\n  🚛 设施建设时间表' }
+  ],
+  pricing: [
+    { role: 'user', avatar: '👤', sender: '你（村长）', text: '番茄要上市了，怎么定价？产量大概 3000 斤/周。' },
+    { role: 'system', avatar: '📦', sender: 'sales-director', text: '启动定价策略流程，先让定价分析师看看市场和成本。' },
+    { role: 'system', avatar: '💹', sender: 'pricing-analyst', text: '番茄定价分析：\n\n📊 成本核算：\n  种植成本：1.2 元/斤\n  包装成本：0.3 元/斤（电商）\n  物流成本：0.8 元/斤（电商冷链）\n  综合成本：1.2-2.3 元/斤\n\n📈 市场行情：\n  批发价：2.0-2.8 元/斤\n  电商价：5.9-8.9 元/500g\n  社区团购：3.5-4.5 元/斤' },
+    { role: 'system', avatar: '💹', sender: 'pricing-analyst', text: '定价建议：\n\n渠道定价表：\n┌────────┬────────┬────────┬────────┐\n│ 渠道    │ 单价    │ 分配    │ 毛利率  │\n├────────┼────────┼────────┼────────┤\n│ 批发    │ 2.5元/斤│ 1500斤 │ 52%    │\n│ 社区团购│ 3.9元/斤│ 600斤  │ 69%    │\n│ 电商    │ 12.9/kg │ 600斤  │ 55%    │\n│ 直播    │ 9.9/kg  │ 300斤  │ 48%    │\n└────────┴────────┴────────┴────────┘\n\n预期周收入：9,240 元\n综合毛利率：56%' },
+    { role: 'system', avatar: '📦', sender: 'sales-director', text: '定价方案已就绪。是否同意此定价？\n\n提示：validate-pricing Hook 将在你确认后自动检查毛利率合规性。' }
+  ],
+  cost: [
+    { role: 'user', avatar: '👤', sender: '你（村长）', text: '这个月花了多少钱？' },
+    { role: 'system', avatar: '💰', sender: 'finance-director', text: '启动月度成本分析...' },
+    { role: 'system', avatar: '📊', sender: 'accountant', text: '3月份支出明细：\n\n  🌾 种植相关：23,500 元\n    农资（种苗+肥料）：12,000\n    灌溉水电：3,500\n    人工：8,000\n\n  📦 销售相关：8,200 元\n    包装材料：3,200\n    物流运费：4,000\n    电商平台费：1,000\n\n  🏗️ 其他：5,300 元\n    设备维修：2,300\n    办公用品：500\n    培训费用：2,500\n\n  总支出：37,000 元' },
+    { role: 'system', avatar: '💹', sender: 'cost-analyst', text: '成本分析：\n  vs 上月：+8%（主因春耕农资投入增加）\n  vs 预算：-5%（控制良好 ✅）\n  单亩成本：185 元（低于行业平均 220 元）\n\n建议：\n  ✅ 整体成本控制良好\n  ⚠️ 物流成本偏高，建议谈批量折扣\n  💡 下月春耕结束后支出将回落' },
+    { role: 'system', avatar: '💰', sender: 'finance-director', text: '3月财务摘要：\n  总收入：68,000 元\n  总支出：37,000 元\n  净利润：31,000 元\n  利润率：45.6% ✅\n\n需要查看更详细的报表吗？' }
+  ]
+};
+
+async function playChat(scenario) {
+  const messages = chatScripts[scenario];
+  if (!messages) return;
+  
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = '';
+  
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    const delay = i === 0 ? 300 : (msg.role === 'user' ? 800 : 600 + Math.random() * 400);
+    await sleep(delay);
+    
+    const msgEl = document.createElement('div');
+    msgEl.className = `chat-msg ${msg.role}`;
+    if (msg.role === 'user') {
+      msgEl.innerHTML = `
+        <div style="flex:1"></div>
+        <div class="bubble">
+          <div class="sender">${msg.sender}</div>
+          <div class="text">${msg.text}</div>
+        </div>
+        <div class="avatar">${msg.avatar}</div>
+      `;
+    } else {
+      msgEl.innerHTML = `
+        <div class="avatar">${msg.avatar}</div>
+        <div class="bubble">
+          <div class="sender">${msg.sender}</div>
+          <div class="text">${msg.text}</div>
+        </div>
+      `;
+    }
+    container.appendChild(msgEl);
+    requestAnimationFrame(() => msgEl.classList.add('visible'));
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+// ============================================================
+// Hook Demos
+// ============================================================
+const hookTestData = {
+  'validate-rotation': { path: 'data/planting/test.json', content: { plot_id:'A001', crop:'tomato', variety:'pink', area:3.5, plant_date:'2026-04-01' }},
+  'validate-quality': { path: 'data/quality/test.json', content: { sample_id:'QC001', product_name:'strawberry' }},
+  'validate-pricing': { path: 'data/sales/test.json', content: { product:'strawberry', cost_per_kg:6, price_per_kg:20 }},
+  'weather-alert-trigger': { path: 'data/weather/test.json', content: { temperature:2, rainfall_mm:60 }},
+  'validate-expense': { path: 'data/finance/test.json', content: { amount:25000, item:'greenhouse-materials' }},
+  'validate-brand-assets': { path: 'assets/brand/Logo_Main.PNG', content: {} }
+};
+
+async function runHookDemo(hookId) {
+  const container = document.getElementById('hd-' + hookId);
+  const btn = container.querySelector('button');
+  const output = document.getElementById('hd-out-' + hookId);
+  
+  btn.disabled = true;
+  btn.textContent = '⏳ 运行中...';
+  output.style.display = 'block';
+  output.textContent = '正在执行验证脚本...';
+  output.style.borderColor = 'var(--border)';
+  
+  try {
+    const res = await fetch('/api/village/hooks/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hookId, testData: hookTestData[hookId] })
+    });
+    const d = await res.json();
+    output.textContent = d.output || '(无输出)';
+    if (d.exitCode === 0) {
+      output.style.borderColor = 'var(--green)';
+    } else if (d.exitCode === 2) {
+      output.style.borderColor = 'var(--red)';
+    } else {
+      output.style.borderColor = 'var(--orange)';
+    }
+  } catch(e) {
+    output.textContent = 'Error: ' + e.message;
+    output.style.borderColor = 'var(--red)';
+  }
+  
+  btn.disabled = false;
+  btn.textContent = '🔄 重新测试';
+}
+
+// ============================================================
+// Animate flow steps on overview
+// ============================================================
+function animateFlowSteps() {
+  const steps = ['of-1','of-2','of-3','of-4','of-5'];
+  steps.forEach(id => {
+    document.getElementById(id)?.classList.remove('active-step','done-step');
+  });
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i > 0) document.getElementById(steps[i-1])?.classList.replace('active-step','done-step');
+    if (i < steps.length) {
+      document.getElementById(steps[i])?.classList.add('active-step');
+      i++;
+    } else {
+      clearInterval(interval);
+      setTimeout(() => {
+        steps.forEach(id => document.getElementById(id)?.classList.remove('done-step'));
+      }, 2000);
+    }
+  }, 700);
+}
+
+// ============================================================
+// Init
+// ============================================================
+window.addEventListener('load', () => {
+  loadStats();
+  animateFlowSteps();
+});
+
+// Handle hash navigation
+if (window.location.hash) {
+  const id = window.location.hash.replace('#', '');
+  go(id);
+}
+</script>
+</body>
+</html>

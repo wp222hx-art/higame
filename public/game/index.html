@@ -1,0 +1,3271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SYNAPSE-beta — AI 智慧农村 · 模拟经营</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#080c18;font-family:system-ui,'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;color:#e0e6ed}
+canvas#gameCanvas{display:block;position:absolute;top:0;left:0;z-index:0;image-rendering:auto;cursor:grab}
+canvas#gameCanvas:active{cursor:grabbing}
+
+/* LOADING */
+#loadScreen{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#060a14,#0a1020,#081018);transition:opacity .8s}
+#loadScreen.done{opacity:0;pointer-events:none}
+.ls-bg{position:absolute;inset:0;overflow:hidden}
+.ls-bg img{width:100%;height:100%;object-fit:cover;opacity:.18;filter:blur(4px)}
+.ls-content{position:relative;text-align:center;z-index:2}
+.ls-title{font-size:60px;font-weight:900;letter-spacing:10px;background:linear-gradient(135deg,#00e676,#69f0ae,#00bcd4,#b2ff59);background-size:200% 200%;animation:gshift 3s ease infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 40px rgba(0,230,118,.25));margin-bottom:4px}
+@keyframes gshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.ls-sub{font-size:14px;color:rgba(255,255,255,.35);letter-spacing:8px;margin-bottom:40px}
+.ls-bar{width:360px;height:5px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden;margin:0 auto}
+.ls-fill{height:100%;width:0%;background:linear-gradient(90deg,#00e676,#69f0ae,#b2ff59);border-radius:3px;transition:width .3s}
+.ls-tip{color:rgba(255,255,255,.3);font-size:11px;margin-top:16px;min-height:18px;letter-spacing:1px}
+.ls-agents{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;max-width:380px;margin:28px auto 0}
+.ls-a{width:30px;height:30px;border-radius:8px;background:rgba(0,230,118,.03);border:1px solid rgba(0,230,118,.06);display:flex;align-items:center;justify-content:center;font-size:14px;opacity:.2;transition:.4s;transform:scale(.7)}
+.ls-a.on{opacity:1;transform:scale(1);border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.08);box-shadow:0 0 12px rgba(0,230,118,.12)}
+
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:10;opacity:0;transition:opacity .5s}
+#hud.show{opacity:1}
+#hud>*{pointer-events:auto}
+
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;background:linear-gradient(180deg,rgba(8,12,24,.97),rgba(8,12,24,.6) 85%,transparent);border-bottom:1px solid rgba(0,230,118,.06);gap:6px;flex-wrap:wrap;overflow:hidden;max-height:80px}
+.tb-logo{font-size:15px;font-weight:900;letter-spacing:3px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tb-logo span{background:linear-gradient(135deg,#00e676,#69f0ae);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.res-group{display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.res-group::-webkit-scrollbar{display:none}
+.res-item{display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.03);transition:.2s}
+.res-item:hover{background:rgba(0,230,118,.06);border-color:rgba(0,230,118,.12)}
+.ri{font-size:13px}.rv{font-size:12px;font-weight:800;min-width:28px;font-variant-numeric:tabular-nums}.rl{font-size:7px;color:#3a4a5e;text-transform:uppercase;letter-spacing:.5px}
+.date-badge{padding:3px 10px;border-radius:6px;background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.1);font-size:11px;color:#ffd740;font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.season-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.spd-wrap{display:flex;gap:2px;background:rgba(255,255,255,.02);border-radius:6px;padding:2px}
+.spd{background:none;border:1px solid transparent;color:#3a4a5e;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:800;transition:.15s}
+.spd:hover{color:#e0e6ed}
+.spd.on{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.25);color:#00e676}
+
+/* Weather */
+.wx{position:absolute;top:48px;left:10px;background:rgba(8,12,24,.94);border:1px solid rgba(0,230,118,.06);border-radius:10px;padding:8px 12px;backdrop-filter:blur(10px)}
+.wx-main{display:flex;align-items:center;gap:6px}
+.wx-icon{font-size:24px}.wx-temp{font-size:20px;font-weight:900;background:linear-gradient(180deg,#ffd740,#ff9100);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.wx-cond{font-size:10px;color:#8a98a8;margin-top:1px}
+.wx-det{font-size:8px;color:#3a4a5e;margin-top:1px}
+
+/* Time display */
+.time-wrap{position:absolute;top:48px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(8,12,24,.9);border:1px solid rgba(0,230,118,.06);border-radius:10px;padding:6px 14px;backdrop-filter:blur(8px)}
+.time-hour{font-size:18px;font-weight:900;color:#ffd740;font-variant-numeric:tabular-nums}
+.time-period{font-size:9px;color:#5a6a7e;font-weight:700}
+
+/* Bottom bar */
+.bot-bar{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;padding:0 12px 8px;gap:4px;background:linear-gradient(0deg,rgba(8,12,24,.97),rgba(8,12,24,.5) 75%,transparent);padding-top:24px;z-index:20;pointer-events:auto}
+.ab{position:relative;background:rgba(10,18,34,.96);border:1px solid rgba(20,40,70,.4);border-radius:10px;padding:8px 12px;cursor:pointer;text-align:center;min-width:64px;transition:.25s;backdrop-filter:blur(6px);pointer-events:auto;z-index:25}
+.ab:hover{border-color:rgba(0,230,118,.35);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.3),0 0 12px rgba(0,230,118,.05)}
+.ab.on{border-color:#00e676;background:rgba(0,230,118,.05)}
+.ab .ai{font-size:20px;display:block;margin-bottom:2px}.ab .al{font-size:8px;color:#4a5a6e;font-weight:700}
+.ab .ak{position:absolute;top:2px;right:4px;font-size:6px;color:#2a3a4e;background:rgba(255,255,255,.03);padding:1px 3px;border-radius:2px}
+
+/* Side panels */
+.sp{position:absolute;top:42px;right:0;width:360px;height:calc(100% - 42px - 60px);background:rgba(6,10,22,.98);border-left:1px solid rgba(0,230,118,.05);overflow:hidden;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:20;display:flex;flex-direction:column;backdrop-filter:blur(14px)}
+.sp.open{transform:translateX(0)}
+.sp-h{padding:10px 14px;border-bottom:1px solid rgba(0,230,118,.05);display:flex;justify-content:space-between;align-items:center;background:rgba(8,14,28,.99);flex-shrink:0}
+.sp-h h3{font-size:13px;font-weight:800}.sp-h h3 em{font-style:normal;background:linear-gradient(135deg,#00e676,#69f0ae);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sp-x{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);color:#4a5a6e;width:24px;height:24px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:.15s}
+.sp-x:hover{color:#fff;background:rgba(255,255,255,.08)}
+.sp-b{padding:10px;overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:rgba(0,230,118,.12) transparent}
+.sp-b::-webkit-scrollbar{width:3px}.sp-b::-webkit-scrollbar-thumb{background:rgba(0,230,118,.12);border-radius:2px}
+
+/* Agent card */
+.ac{background:rgba(14,24,44,.4);border:1px solid rgba(20,40,70,.35);border-radius:8px;padding:8px;margin-bottom:5px;transition:.2s;position:relative;overflow:hidden}
+.ac::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--dc,#00e676),transparent);opacity:0;transition:.2s}
+.ac:hover{border-color:rgba(0,230,118,.18)}.ac:hover::before{opacity:1}
+.ac-top{display:flex;align-items:center;gap:7px}
+.ac-av{width:36px;height:36px;border-radius:8px;overflow:hidden;background:rgba(0,230,118,.03);border:1px solid rgba(0,230,118,.08);display:flex;align-items:center;justify-content:center}
+.ac-av canvas{image-rendering:pixelated}
+.ac-nm{font-size:11px;font-weight:800}.ac-rl{font-size:8px;color:#3a4a5e;margin-top:1px}
+.ac-st{margin-left:auto;font-size:8px;padding:2px 6px;border-radius:4px;font-weight:800}
+.ac-st.w{background:rgba(0,230,118,.08);color:#00e676}.ac-st.i{background:rgba(255,255,255,.02);color:#3a4a5e}
+.ac-task{font-size:9px;color:#4a5a6e;margin-top:4px;padding-left:43px;font-style:italic}
+.ac-loc{font-size:8px;color:#2a3a4e;margin-top:1px;padding-left:43px}
+
+/* Toasts */
+.toasts{position:absolute;top:48px;right:10px;width:280px;z-index:30;display:flex;flex-direction:column;gap:4px;pointer-events:auto}
+.toast{background:rgba(8,14,28,.97);border:1px solid rgba(0,230,118,.12);border-radius:9px;padding:9px 12px;animation:tin .3s ease-out;cursor:pointer;transition:.3s;backdrop-filter:blur(8px);overflow:hidden;position:relative}
+.toast::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.toast.info::before{background:#42a5f5}.toast.warn::before{background:#ffa726}.toast.error::before{background:#ef5350}.toast.success::before{background:#00e676}
+.toast:hover{transform:translateX(-2px)}
+.toast.rm{opacity:0;transform:translateX(60px);max-height:0;padding:0;margin:0;border:0;overflow:hidden;transition:.3s}
+.t-title{font-size:10px;font-weight:800}.t-body{font-size:9px;color:#4a5a6e;margin-top:2px;line-height:1.4}
+.toast .t-bar{position:absolute;bottom:0;left:0;height:2px;background:rgba(0,230,118,.25);animation:tbar 5s linear forwards}
+@keyframes tin{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tbar{from{width:100%}to{width:0}}
+
+/* Event modal */
+.emod{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.emod.open{display:flex}
+.ecard{background:rgba(8,14,28,.99);border:1px solid rgba(0,230,118,.12);border-radius:16px;width:480px;max-width:95vw;overflow:hidden;animation:ein .3s cubic-bezier(.2,.8,.2,1);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+@keyframes ein{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:none}}
+.eb{height:120px;background-size:cover;background-position:center;position:relative;display:flex;align-items:flex-end;padding:12px;overflow:hidden}
+.eb::after{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(transparent,rgba(8,14,28,.96))}
+.eb .ei{position:absolute;top:12px;right:12px;font-size:28px;z-index:1}.eb .et{position:relative;z-index:1;font-size:18px;font-weight:900}
+.ebody{padding:16px}
+.ebody p{font-size:11px;color:#8a98a8;line-height:1.7;margin-bottom:12px;white-space:pre-line}
+.e-agents{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.e-ag{font-size:8px;padding:3px 7px;border-radius:4px;background:rgba(0,230,118,.05);border:1px solid rgba(0,230,118,.1);color:#00e676;font-weight:800;display:flex;align-items:center;gap:3px}
+.echoices{display:flex;flex-direction:column;gap:6px}
+.ech{background:rgba(0,230,118,.02);border:1px solid rgba(0,230,118,.08);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.2s;text-align:left}
+.ech:hover{background:rgba(0,230,118,.06);border-color:rgba(0,230,118,.25);transform:translateX(2px)}
+.ech-t{font-size:12px;font-weight:800}.ech-e{font-size:9px;color:#4a5a6e;margin-top:2px}
+
+/* Cmd palette */
+.cmd-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;backdrop-filter:blur(3px)}
+
+/* Chat Hall */
+.chat-hall{position:absolute;top:42px;left:0;width:380px;height:calc(100% - 42px - 60px);background:rgba(6,10,22,.98);border-right:1px solid rgba(0,230,118,.05);transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:20;display:flex;flex-direction:column;backdrop-filter:blur(14px)}
+.chat-hall.open{transform:translateX(0)}
+.ch-header{padding:8px 12px;border-bottom:1px solid rgba(0,230,118,.06);display:flex;justify-content:space-between;align-items:center;background:rgba(8,14,28,.99);flex-shrink:0}
+.ch-header h3{font-size:13px;font-weight:800}.ch-header h3 em{font-style:normal;background:linear-gradient(135deg,#00e676,#69f0ae);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ch-tabs{display:flex;gap:2px;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.02);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.ch-tabs::-webkit-scrollbar{display:none}
+.ch-tab{padding:4px 8px;border-radius:6px;font-size:8px;font-weight:700;cursor:pointer;border:1px solid transparent;color:#4a5a6e;transition:.15s;white-space:nowrap}
+.ch-tab:hover{color:#8a98a8;background:rgba(255,255,255,.02)}
+.ch-tab.on{background:rgba(0,230,118,.08);border-color:rgba(0,230,118,.15);color:#00e676}
+.ch-tab .tab-badge{display:inline-block;min-width:12px;height:12px;line-height:12px;text-align:center;border-radius:6px;font-size:7px;font-weight:900;background:rgba(0,230,118,.15);color:#00e676;margin-left:3px;padding:0 3px}
+.ch-feed{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:rgba(0,230,118,.1) transparent}
+.ch-feed::-webkit-scrollbar{width:4px}
+.ch-feed::-webkit-scrollbar-thumb{background:rgba(0,230,118,.15);border-radius:2px}
+.ch-msg{display:flex;gap:6px;padding:6px 8px;border-radius:8px;transition:.15s;animation:msgIn .25s ease-out}
+.ch-msg:hover{background:rgba(255,255,255,.02)}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ch-msg .ch-avatar{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;border:1px solid rgba(255,255,255,.05)}
+.ch-msg .ch-content{flex:1;min-width:0}
+.ch-msg .ch-name{font-size:8px;font-weight:800;margin-bottom:2px;display:flex;align-items:center;gap:4px}
+.ch-msg .ch-dept{font-size:7px;padding:1px 4px;border-radius:3px;font-weight:600}
+.ch-msg .ch-text{font-size:10px;color:#b0b8c4;line-height:1.5;word-break:break-all}
+.ch-msg .ch-time{font-size:7px;color:#2a3a4e;margin-top:2px}
+.ch-msg.system{padding:4px 8px}
+.ch-msg.system .ch-text{font-size:8px;color:#3a4a5e;text-align:center;font-style:italic}
+.ch-msg.important .ch-content{background:rgba(255,215,0,.03);border:1px solid rgba(255,215,0,.08);border-radius:6px;padding:4px 6px}
+
+/* Goal tracker */
+.goal-bar{position:absolute;top:42px;left:50%;transform:translateX(-50%);background:rgba(8,14,28,.96);border:1px solid rgba(0,230,118,.06);border-radius:0 0 10px 10px;padding:4px 12px;display:flex;align-items:center;gap:8px;z-index:15;max-width:500px;backdrop-filter:blur(10px);transition:opacity .3s}
+.goal-bar.hidden{opacity:0;pointer-events:none}
+.goal-title{font-size:9px;font-weight:800;color:#8a98a8;white-space:nowrap}
+.goal-prog{flex:1;min-width:80px;height:6px;background:rgba(255,255,255,.03);border-radius:3px;overflow:hidden}
+.goal-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1);background:linear-gradient(90deg,#00e676,#69f0ae,#b2ff59)}
+.goal-pct{font-size:9px;font-weight:900;color:#00e676;min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* Dept colors */
+.dept-lead{background:rgba(255,215,0,.08);color:#ffd740;border-color:rgba(255,215,0,.15)}
+.dept-plant{background:rgba(0,230,118,.08);color:#00e676;border-color:rgba(0,230,118,.15)}
+.dept-sales{background:rgba(255,145,0,.08);color:#ff9100;border-color:rgba(255,145,0,.15)}
+.dept-finance{background:rgba(66,165,245,.08);color:#42a5f5;border-color:rgba(66,165,245,.15)}
+.dept-quality{background:rgba(206,147,216,.08);color:#ce93d8;border-color:rgba(206,147,216,.15)}
+.dept-brand{background:rgba(233,30,99,.08);color:#e91e63;border-color:rgba(233,30,99,.15)}
+.dept-eco{background:rgba(139,195,74,.08);color:#8bc34a;border-color:rgba(139,195,74,.15)}
+.dept-rear{background:rgba(255,183,77,.08);color:#ffb74d;border-color:rgba(255,183,77,.15)}
+.cmd-ov.open{display:flex}
+.cmd-box{background:rgba(8,14,28,.99);border:1px solid rgba(0,230,118,.15);border-radius:13px;width:480px;max-width:95vw;max-height:55vh;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.5);animation:cin .15s ease-out}
+@keyframes cin{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.cmd-iw{padding:12px;border-bottom:1px solid rgba(0,230,118,.06);display:flex;align-items:center;gap:8px}
+.cmd-iw::before{content:'>';font-size:16px;color:#00e676;font-weight:900;font-family:monospace}
+.cmd-i{flex:1;background:none;border:none;color:#e0e6ed;font-size:14px;outline:none;font-family:system-ui,monospace}
+.cmd-i::placeholder{color:#1a2a3e}
+.cmd-list{max-height:calc(55vh - 50px);overflow-y:auto;padding:4px}
+.cmd-it{padding:8px 10px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:.1s;margin:1px 0}
+.cmd-it:hover,.cmd-it.sel{background:rgba(0,230,118,.05)}
+.cmd-ic{font-size:18px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.02);border-radius:6px}
+.cmd-inf{flex:1}.cmd-nm{font-size:11px;font-weight:800;font-family:monospace;color:#69f0ae}.cmd-ds{font-size:9px;color:#3a4a5e;margin-top:1px}
+.cmd-cat{font-size:7px;padding:2px 5px;border-radius:3px;font-weight:800}
+
+/* Minimap */
+.mm-wrap{position:absolute;bottom:68px;left:10px;pointer-events:auto}
+.mm{width:160px;height:110px;background:rgba(8,12,24,.92);border:1px solid rgba(0,230,118,.08);border-radius:10px;overflow:hidden;backdrop-filter:blur(8px);position:relative}
+.mm canvas{width:100%;height:100%;border-radius:9px}
+.mm-lbl{position:absolute;top:3px;left:6px;font-size:6px;color:rgba(0,230,118,.25);font-weight:900;letter-spacing:2px}
+
+/* NPC bubble */
+.npc-bubble{position:absolute;pointer-events:none;z-index:5;white-space:nowrap;font-size:8px;background:rgba(0,0,0,.7);color:#fff;padding:2px 6px;border-radius:4px;transform:translate(-50%,-100%);opacity:0;transition:opacity .3s}
+.npc-bubble.show{opacity:1}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<!-- LOADING -->
+<div id="loadScreen">
+  <div class="ls-bg"><img id="lsBgImg" src="/game/assets/synapse-title.png" alt=""></div>
+  <div class="ls-content">
+    <div class="ls-title">SYNAPSE-beta</div>
+    <div class="ls-sub">AI 智慧农村 · 模拟经营 · beta</div>
+    <div class="ls-bar"><div class="ls-fill" id="lsFill"></div></div>
+    <div class="ls-tip" id="lsTip">正在初始化 SYNAPSE-beta 世界引擎...</div>
+    <div class="ls-agents" id="lsAgents"></div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="top-bar">
+    <div class="tb-logo">🧠 <span>SYNAPSE-beta</span></div>
+    <div class="res-group">
+      <div class="res-item"><span class="ri">💰</span><div><span class="rv" id="rGold">5.0万</span><br><span class="rl">资金</span></div></div>
+      <div class="res-item"><span class="ri">🌾</span><div><span class="rv" id="rGrain">0</span><br><span class="rl">粮食</span></div></div>
+      <div class="res-item"><span class="ri">🍓</span><div><span class="rv" id="rFruit">0</span><br><span class="rl">水果</span></div></div>
+      <div class="res-item"><span class="ri">🥬</span><div><span class="rv" id="rVeg">0</span><br><span class="rl">蔬菜</span></div></div>
+      <div class="res-item"><span class="ri">⭐</span><div><span class="rv" id="rRep">60</span><br><span class="rl">声誉</span></div></div>
+      <div class="res-item"><span class="ri">👥</span><div><span class="rv" id="rPop">12</span><br><span class="rl">村民</span></div></div>
+    </div>
+    <div class="date-badge"><span class="season-dot" id="sDot" style="background:#00e676"></span><span id="dateDisp">第1年 春季 第1天</span></div>
+    <div class="spd-wrap">
+      <button class="spd" onclick="setSpeed(0)">⏸</button>
+      <button class="spd on" onclick="setSpeed(1)">▶</button>
+      <button class="spd" onclick="setSpeed(2)">▶▶</button>
+      <button class="spd" onclick="setSpeed(3)">▶▶▶</button>
+    </div>
+    <div class="spd-wrap" style="margin-left:4px">
+      <a href="/village/editor" class="spd" style="text-decoration:none;font-size:9px;color:#69f0ae">👤编辑</a>
+      <a href="/village/map-editor" class="spd" style="text-decoration:none;font-size:9px;color:#69f0ae">🗺️地图</a>
+    </div>
+    </div>
+
+  <div class="wx" id="wxPanel">
+    <div class="wx-main"><span class="wx-icon" id="wxIco">☀️</span><span class="wx-temp" id="wxTemp">18°C</span></div>
+    <div class="wx-cond" id="wxCond">晴朗</div>
+    <div class="wx-det" id="wxDet">湿度 65% · 春季</div>
+  </div>
+
+  <div class="time-wrap" id="timeWrap">
+    <span class="time-hour" id="timeHour">06:00</span>
+    <span class="time-period" id="timePeriod">清晨</span>
+    <span id="saveIndicator" style="font-size:7px;color:#00e676;opacity:.3;margin-left:6px;transition:opacity .3s">💾</span>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <div class="bot-bar">
+    <div class="ab" onclick="togChatHall()"><span class="ai">💬</span><span class="al">聊天大厅</span><span class="ak">Q</span></div>
+    <div class="ab" onclick="togPanel('pAgents')"><span class="ai">👥</span><span class="al">代理团队</span><span class="ak">1</span></div>
+    <div class="ab" onclick="openCmd()"><span class="ai">⚡</span><span class="al">指令中心</span><span class="ak">Space</span></div>
+    <div class="ab" onclick="togPanel('pFarm')"><span class="ai">🌱</span><span class="al">农田管理</span><span class="ak">2</span></div>
+    <div class="ab" onclick="togPanel('pMarket')"><span class="ai">📈</span><span class="al">市场交易</span><span class="ak">3</span></div>
+    <div class="ab" onclick="togPanel('pFin')"><span class="ai">💰</span><span class="al">财务总览</span><span class="ak">4</span></div>
+    <div class="ab" onclick="togPanel('pLog')"><span class="ai">📋</span><span class="al">日志</span><span class="ak">5</span></div>
+    <a href="/village/editor" class="ab" style="text-decoration:none;color:inherit"><span class="ai">✏️</span><span class="al">角色编辑</span><span class="ak">E</span></a>
+    <div class="ab" onclick="saveGame(true)"><span class="ai">💾</span><span class="al">保存</span><span class="ak">Ctrl+S</span></div>
+  </div>
+
+  <!-- Chat Hall (left slide) -->
+  <div class="chat-hall" id="chatHall">
+    <div class="ch-header"><h3>💬 <em>聊天大厅</em></h3><button class="sp-x" onclick="closeChatHall()">✕</button></div>
+    <div class="ch-tabs" id="chTabs"></div>
+    <div class="ch-feed" id="chFeed"></div>
+  </div>
+
+  <!-- Goal Tracker -->
+  <div class="goal-bar hidden" id="goalBar">
+    <span class="goal-title" id="goalTitle">—</span>
+    <div class="goal-prog"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
+    <span class="goal-pct" id="goalPct">0%</span>
+  </div>
+
+  <!-- Side panels -->
+  <div class="sp" id="pAgents"><div class="sp-h"><h3>👥 <em>AI 代理团队</em></h3><button class="sp-x" onclick="closePanel()">✕</button></div><div class="sp-b" id="agList"></div></div>
+  <div class="sp" id="pFarm"><div class="sp-h"><h3>🌱 <em>农田管理</em></h3><button class="sp-x" onclick="closePanel()">✕</button></div><div class="sp-b" id="farmInfo"></div></div>
+  <div class="sp" id="pMarket"><div class="sp-h"><h3>📈 <em>市场交易</em></h3><button class="sp-x" onclick="closePanel()">✕</button></div><div class="sp-b" id="mktInfo"></div></div>
+  <div class="sp" id="pFin"><div class="sp-h"><h3>💰 <em>财务总览</em></h3><button class="sp-x" onclick="closePanel()">✕</button></div><div class="sp-b" id="finInfo"></div></div>
+  <div class="sp" id="pLog"><div class="sp-h"><h3>📋 <em>事件日志</em></h3><button class="sp-x" onclick="closePanel()">✕</button></div><div class="sp-b" id="logInfo"></div></div>
+
+  <!-- Cmd palette -->
+  <div class="cmd-ov" id="cmdOv" onclick="if(event.target===this)closeCmd()">
+    <div class="cmd-box">
+      <div class="cmd-iw"><input class="cmd-i" id="cmdI" placeholder="输入指令... /crop-plan" autocomplete="off"></div>
+      <div class="cmd-list" id="cmdList"></div>
+    </div>
+  </div>
+
+  <!-- Event modal -->
+  <div class="emod" id="eMod">
+    <div class="ecard">
+      <div class="eb" id="eBan"><span class="ei" id="eIco"></span><span class="et" id="eTit"></span></div>
+      <div class="ebody"><p id="eDesc"></p><div class="e-agents" id="eAg"></div><div class="echoices" id="eCh"></div></div>
+    </div>
+  </div>
+
+  <!-- Minimap -->
+  <div class="mm-wrap"><div class="mm"><span class="mm-lbl">SYNAPSE-beta</span><canvas id="mmC" width="160" height="110"></canvas></div></div>
+</div>
+
+<script>
+"use strict";
+// =====================================================
+//  SYNAPSE-beta — Complete Game Engine (Canvas2D)
+//  Features: Sprite-based rendering, NPC pathfinding,
+//  time-based crop growth, building placement, weather
+// =====================================================
+
+// === CONSTANTS (defaults, will be updated from map editor data) ===
+// Isometric tile dimensions (same as map editor)
+let TILE_W = 64, TILE_H = 32; // Isometric 2:1 diamond tiles
+let TILE = 48; // Legacy compat — used only for agent sprite sizing
+let MAP_W = 24, MAP_H = 18;
+const ELEV_PX = 8; // pixels per elevation level
+let _elevationData = null; // [y][x] = height level (0-4), loaded from editor
+
+// Isometric projection helpers (identical to map-editor.html)
+function isoToScreen(col, row) {
+  return { x: (col - row) * (TILE_W / 2), y: (col + row) * (TILE_H / 2) };
+}
+function screenToIso(px, py) {
+  return { col: (px / (TILE_W / 2) + py / (TILE_H / 2)) / 2, row: (py / (TILE_H / 2) - px / (TILE_W / 2)) / 2 };
+}
+function getWorldBounds() {
+  const tl = isoToScreen(0, 0), tr = isoToScreen(MAP_W, 0), bl = isoToScreen(0, MAP_H), br = isoToScreen(MAP_W, MAP_H);
+  const maxE = 4 * ELEV_PX;
+  return { minX: bl.x, maxX: tr.x, minY: tl.y - maxE, maxY: br.y, w: tr.x - bl.x, h: br.y - tl.y + maxE };
+}
+function getOriginOffset() {
+  const b = getWorldBounds();
+  return { x: -b.minX, y: 4 * ELEV_PX };
+}
+// Convert grid col/row to world pixel position (for agents, buildings, etc.)
+function gridToWorld(col, row) {
+  const off = getOriginOffset(), s = isoToScreen(col, row);
+  return { x: off.x + s.x, y: off.y + s.y };
+}
+// Convert world pixel to grid col/row (inverse)
+function worldToGrid(wx, wy) {
+  const off = getOriginOffset();
+  return screenToIso(wx - off.x, wy - off.y);
+}
+
+// Isometric diamond path (for clipping/stroke)
+function diamondPath(ctx, x, y, tw, th) {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + tw/2, y + th/2);
+  ctx.lineTo(x, y + th);
+  ctx.lineTo(x - tw/2, y + th/2);
+  ctx.closePath();
+}
+// 3D isometric box for elevated terrain
+function drawIsoBox(ctx, x, y, tw, th, height, topColor, leftColor, rightColor) {
+  const h = height;
+  ctx.fillStyle = topColor; diamondPath(ctx, x, y - h, tw, th); ctx.fill();
+  ctx.fillStyle = leftColor;
+  ctx.beginPath(); ctx.moveTo(x - tw/2, y + th/2 - h); ctx.lineTo(x, y + th - h); ctx.lineTo(x, y + th); ctx.lineTo(x - tw/2, y + th/2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = rightColor;
+  ctx.beginPath(); ctx.moveTo(x + tw/2, y + th/2 - h); ctx.lineTo(x, y + th - h); ctx.lineTo(x, y + th); ctx.lineTo(x + tw/2, y + th/2); ctx.closePath(); ctx.fill();
+}
+function darkenColor(hex, factor) {
+  let r, g, b;
+  if (hex.startsWith('#')) { r = parseInt(hex.slice(1,3),16); g = parseInt(hex.slice(3,5),16); b = parseInt(hex.slice(5,7),16); }
+  else if (hex.startsWith('rgb')) { const m = hex.match(/\d+/g); r = +m[0]; g = +m[1]; b = +m[2]; }
+  else { r = 100; g = 100; b = 100; }
+  return `rgb(${Math.round(r*factor)},${Math.round(g*factor)},${Math.round(b*factor)})`;
+}
+function imgReady(img) { return img && img.complete && img.naturalWidth > 0; }
+
+// World bounds (recalculated after map load)
+let WORLD_W = 1200, WORLD_H = 800;
+function recalcWorldBounds() {
+  const b = getWorldBounds();
+  WORLD_W = b.w + 100;
+  WORLD_H = b.h + 100;
+}
+recalcWorldBounds();
+
+const CVS = document.getElementById('gameCanvas');
+const CTX = CVS.getContext('2d');
+CTX.imageSmoothingEnabled = true;
+CTX.imageSmoothingQuality = 'high';
+
+// roundRect polyfill
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = [r,r,r,r];
+    this.moveTo(x + r[0], y);
+    this.arcTo(x + w, y, x + w, y + h, r[1]);
+    this.arcTo(x + w, y + h, x, y + h, r[2]);
+    this.arcTo(x, y + h, x, y, r[3]);
+    this.arcTo(x, y, x + w, y, r[0]);
+    this.closePath();
+    return this;
+  };
+}
+
+let W = innerWidth, H = innerHeight;
+CVS.width = W; CVS.height = H;
+addEventListener('resize', () => { W = innerWidth; H = innerHeight; CVS.width = W; CVS.height = H; CTX.imageSmoothingEnabled = true; CTX.imageSmoothingQuality = 'high'; });
+
+// === CAMERA ===
+const cam = { x: 0, y: 0, z: 1.8, drag: false, sx: 0, sy: 0, dx: 0, dy: 0, moved: false };
+function centerCamera() {
+  const b = getWorldBounds(), off = getOriginOffset();
+  cam.x = off.x + (b.minX + b.maxX) / 2 - W / 2 / cam.z;
+  cam.y = off.y + (b.minY + b.maxY) / 2 - H / 2 / cam.z;
+}
+centerCamera();
+
+// === IMAGE LOADER ===
+const IMG = {};
+let loadCount = 0, loadTotal = 0;
+
+function loadImg(key, src) {
+  loadTotal++;
+  const img = new Image();
+  img.onload = () => { IMG[key] = img; loadCount++; updateLoadProgress(); };
+  img.onerror = () => { console.warn('Failed to load:', key, src); loadCount++; updateLoadProgress(); };
+  img.src = src;
+}
+
+function updateLoadProgress() {
+  const p = loadTotal ? loadCount / loadTotal : 0;
+  const pct = Math.round(8 + p * 82);
+  document.getElementById('lsFill').style.width = pct + '%';
+  const tips = ['加载地形纹理...', '唤醒 AI 角色...', '生长作物精灵...', '建造村庄建筑...', '连接 SYNAPSE-beta 神经网络...', '初始化世界引擎...'];
+  document.getElementById('lsTip').textContent = tips[Math.min(Math.floor(p * tips.length), tips.length - 1)];
+  const aa = document.querySelectorAll('.ls-a');
+  const n = Math.floor(p * aa.length);
+  aa.forEach((a, i) => { if (i < n) a.classList.add('on'); });
+  if (loadCount >= loadTotal) finishLoad();
+}
+
+let _gameStarted = false;
+function finishLoad() {
+  if (_gameStarted) return;  // Prevent re-entry from late image loads
+  _gameStarted = true;
+  document.getElementById('lsFill').style.width = '100%';
+  document.getElementById('lsTip').textContent = 'SYNAPSE-beta 世界准备就绪';
+  setTimeout(async () => {
+    document.getElementById('loadScreen').classList.add('done');
+    document.getElementById('hud').classList.add('show');
+    await initGame();
+    requestAnimationFrame(gameLoop);
+    setTimeout(() => showWelcome(), 500);
+  }, 700);
+}
+
+// === GAME STATE ===
+const G = {
+  year: 1, season: 0, day: 1, hour: 6, minute: 0,
+  speed: 1, paused: false, tick: 0, totalDays: 0,
+  gold: 50000, grain: 0, fruit: 0, veg: 0, rep: 60, pop: 12,
+  incomeT: 0, expenseT: 0,
+  sNames: ['春季', '夏季', '秋季', '冬季'],
+  sColors: ['#00e676', '#ffd740', '#ff9100', '#64b5f6'],
+  sEmojis: ['🌸', '☀️', '🍂', '❄️'],
+  wTypes: [
+    { n: '晴朗', i: '☀️', t: [15, 32], h: [40, 65] },
+    { n: '多云', i: '⛅', t: [12, 28], h: [50, 75] },
+    { n: '小雨', i: '🌧️', t: [10, 25], h: [70, 90] },
+    { n: '暴雨', i: '⛈️', t: [8, 22], h: [80, 95] },
+    { n: '大风', i: '🌬️', t: [5, 20], h: [30, 60] },
+    { n: '霜冻', i: '❄️', t: [-5, 5], h: [60, 80] }
+  ],
+  weather: { type: 0, temp: 18, hum: 65 },
+  plots: [], agents: [], market: {}, log: [],
+  hoverPlot: null, selectedPlot: null
+};
+
+// === CROP DEFINITIONS ===
+const CROPS = {
+  rice:       { n: '水稻',  i: '🌾', type: 'grain', seasons: [0, 1], grow: 90, yield: 800, cost: 200, price: 3.0 },
+  wheat:      { n: '小麦',  i: '🌿', type: 'grain', seasons: [2, 3], grow: 75, yield: 600, cost: 150, price: 2.5 },
+  tomato:     { n: '番茄',  i: '🍅', type: 'veg',   seasons: [0, 1], grow: 60, yield: 500, cost: 180, price: 4.0 },
+  cabbage:    { n: '白菜',  i: '🥬', type: 'veg',   seasons: [2, 3, 0], grow: 45, yield: 700, cost: 100, price: 2.0 },
+  strawberry: { n: '草莓',  i: '🍓', type: 'fruit', seasons: [3, 0], grow: 50, yield: 300, cost: 400, price: 20.0 },
+  orange:     { n: '柑橘',  i: '🍊', type: 'fruit', seasons: [2],    grow: 120, yield: 1000, cost: 300, price: 6.0 },
+  pepper:     { n: '辣椒',  i: '🌶️', type: 'veg',   seasons: [0, 1], grow: 55, yield: 400, cost: 160, price: 5.0 },
+  lotus:      { n: '莲藕',  i: '🪷', type: 'veg',   seasons: [0, 1], grow: 100, yield: 500, cost: 250, price: 8.0 },
+  tea:        { n: '茶叶',  i: '🍵', type: 'veg',   seasons: [0, 1, 2], grow: 80, yield: 200, cost: 500, price: 30.0 },
+  corn:       { n: '玉米',  i: '🌽', type: 'grain', seasons: [0, 1], grow: 70, yield: 650, cost: 120, price: 2.2 }
+};
+
+// === AGENT DEFINITIONS (with assigned map locations) ===
+const AGENT_DEFS = [];
+
+// Load all agents from editor API (built-in + custom)
+async function loadAllAgents() {
+  try {
+    const resp = await fetch('/api/editor/agents');
+    if (!resp.ok) throw new Error('Failed to load agents');
+    const agents = await resp.json();
+    AGENT_DEFS.length = 0;
+
+    // Pre-load custom sprites without triggering finishLoad loop
+    const customSpritePromises = [];
+    agents.forEach(a => {
+      if (!a.builtin && a.spriteUrl && a.spriteUrl.includes('/custom/')) {
+        const key = 'char-custom-' + a.id;
+        if (!IMG[key]) {
+          customSpritePromises.push(new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => { IMG[key] = img; resolve(); };
+            img.onerror = () => { console.warn('Failed to load custom sprite:', a.id); resolve(); };
+            img.src = a.spriteUrl;
+          }));
+        }
+      }
+    });
+    await Promise.all(customSpritePromises);
+
+    agents.forEach(a => {
+      let spriteKey = a.sprite || a.id;
+      if (!a.builtin && a.spriteUrl && a.spriteUrl.includes('/custom/')) {
+        spriteKey = 'custom-' + a.id;
+      }
+      AGENT_DEFS.push({
+        id: a.id,
+        n: a.name,
+        i: a.icon || '🤖',
+        dept: a.dept || '种植部',
+        tier: a.tier || 3,
+        sprite: spriteKey,
+        zone: a.zone || 'village-hall',
+        color: a.color || '#00e676',
+        custom: !a.builtin,
+        skills: a.skills || [],
+        scale: a.scale || 2.2
+      });
+    });
+    console.log(`Loaded ${AGENT_DEFS.length} agents from editor`);
+  } catch (e) {
+    console.warn('Failed to load agents from API:', e);
+  }
+}
+
+// === MAP LAYOUT (New Village - based on reference illustration) ===
+// Zone definitions matching the illustrated village layout EXACTLY
+const ZONES = {
+  'temple':       { x: 0, y: 0, w: 5, h: 3 },       // 古祠堂 (top-left)
+  'village-hall': { x: 0, y: 0, w: 5, h: 3 },        // alias for temple
+  'watchtower':   { x: 0, y: 4, w: 4, h: 5 },        // 瞭望塔/气象站 (left-center)
+  'weather':      { x: 0, y: 4, w: 4, h: 5 },        // alias
+  'farmhouse':    { x: 0, y: 11, w: 6, h: 7 },       // 村长大院 (bottom-left)
+  'lab':          { x: 0, y: 11, w: 6, h: 7 },       // alias -> farmhouse
+  'training':     { x: 0, y: 11, w: 6, h: 7 },       // alias -> farmhouse
+  'market':       { x: 13, y: 0, w: 8, h: 3 },       // 集市 (top-right, colorful canopies)
+  'warehouse':    { x: 21, y: 0, w: 3, h: 3 },       // 石仓库 (far top-right)
+  'cottage':      { x: 16, y: 3, w: 4, h: 4 },       // 杂货铺 (pink roof cottage)
+  'livestream':   { x: 16, y: 3, w: 4, h: 4 },       // alias -> cottage
+  'workshop':     { x: 20, y: 3, w: 4, h: 5 },       // 木工坊 (far right)
+  'logistics':    { x: 20, y: 3, w: 4, h: 5 },       // alias -> workshop
+  'greenhouse':   { x: 7, y: 12, w: 5, h: 4 },       // 温室大棚 (bottom-center)
+  'watermill':    { x: 18, y: 12, w: 3, h: 4 },      // 水车磨坊
+  'fields-a':     { x: 6, y: 4, w: 9, h: 4 },        // 水田区 (center)
+  'fields-b':     { x: 6, y: 4, w: 9, h: 4 },        // alias
+  'paddy-nw':     { x: 6, y: 4, w: 4, h: 2 },        // 西北水田
+  'paddy-ne':     { x: 11, y: 4, w: 4, h: 2 },       // 东北水田
+  'paddy-sw':     { x: 6, y: 6, w: 4, h: 2 },        // 西南水田
+  'paddy-se':     { x: 11, y: 6, w: 4, h: 2 },       // 东南水田
+  'orchard':      { x: 17, y: 5, w: 3, h: 3 },       // 果园
+  'tea-garden':   { x: 20, y: 8, w: 3, h: 9 },       // 菜地
+  'vegplot':      { x: 20, y: 8, w: 3, h: 9 },       // 菜地
+  'pond':         { x: 12, y: 13, w: 9, h: 5 },      // 莲花塘
+  'lotus-pond':   { x: 12, y: 13, w: 9, h: 5 },      // alias
+};
+
+// Buildings placed on map (matching illustration exactly)
+const BLDGS = [
+  { id: 'temple',     x: 1,    y: 0.3,  w: 3.5, h: 2.5, name: '⛩️ 古祠堂' },
+  { id: 'watchtower', x: 0.5,  y: 5,    w: 2.5, h: 3.5, name: '🔭 瞭望塔' },
+  { id: 'farmhouse',  x: 0.5,  y: 12,   w: 5,   h: 4,   name: '🏠 村长大院' },
+  { id: 'market',     x: 13.5, y: 0.2,  w: 7,   h: 2.5, name: '🏪 集市' },
+  { id: 'warehouse',  x: 21,   y: 0.2,  w: 2.5, h: 2.5, name: '🏗️ 石仓库' },
+  { id: 'cottage',    x: 16,   y: 3.5,  w: 3,   h: 3,   name: '🏡 杂货铺' },
+  { id: 'workshop',   x: 20.5, y: 3.5,  w: 3,   h: 3,   name: '🔨 木工坊' },
+  { id: 'greenhouse', x: 7.5,  y: 12.5, w: 4,   h: 3,   name: '🌿 温室大棚' },
+  { id: 'watermill',  x: 18,   y: 13,   w: 2.5, h: 2.5, name: '⚙️ 水车磨坊' },
+  { id: 'well',       x: 16.5, y: 6,    w: 1,   h: 1,   name: '🪣 水井' },
+];
+
+// Decoration layer (loaded from map editor data)
+let DECORATIONS = [];
+
+// Terrain map generation
+const TMAP = [];
+let _mapEditorData = null; // Loaded from map editor API
+let _customTerrainImages = {}; // assetId -> HTMLImageElement for custom terrain tiles
+let _customAssetsList = []; // loaded custom assets list
+let _hdAssets = { terrain: {}, buildings: {}, decorations: {} }; // HD 2.5D asset manifest
+let _hdImages = {}; // url -> Image for HD assets
+
+async function loadCustomAssets() {
+  try {
+    const resp = await fetch('/api/editor/map-assets');
+    if (resp.ok) {
+      _customAssetsList = await resp.json();
+      // Preload custom terrain images — support both plain ID and 'custom-xxx' format
+      _customAssetsList.filter(a => a.category === 'terrain' || a.category === 'water' || a.category === 'farmland').forEach(a => {
+        const img = new Image();
+        img.src = a.url;
+        _customTerrainImages[a.id] = img;
+        _customTerrainImages['custom-' + a.id] = img; // editor uses 'custom-xxx' format
+      });
+      // Preload custom building and decoration assets
+      _customAssetsList.filter(a => a.category === 'building' || a.category === 'decoration').forEach(a => {
+        const img = new Image();
+        img.src = a.url;
+        _customTerrainImages[a.id] = img; // reuse same image cache
+      });
+      console.log('Loaded ' + _customAssetsList.length + ' custom assets (' + _customAssetsList.filter(a=>a.category==='terrain').length + ' terrain)');
+    }
+  } catch(e) { /* use defaults */ }
+  // Load HD 2.5D asset manifest
+  try {
+    const hdResp = await fetch('/api/game/hd-assets');
+    if (hdResp.ok) {
+      _hdAssets = await hdResp.json();
+      // Preload all HD terrain tiles
+      Object.entries(_hdAssets.terrain).forEach(([name, url]) => {
+        const img = new Image();
+        img.src = url;
+        _hdImages['terrain-' + name] = img;
+      });
+      // Preload all HD building sprites
+      Object.entries(_hdAssets.buildings).forEach(([name, url]) => {
+        const img = new Image();
+        img.src = url;
+        _hdImages['bld-' + name] = img;
+      });
+      // Preload all HD decoration sprites
+      Object.entries(_hdAssets.decorations).forEach(([name, url]) => {
+        const img = new Image();
+        img.src = url;
+        _hdImages['deco-' + name] = img;
+      });
+      console.log('HD assets loaded: terrain=' + Object.keys(_hdAssets.terrain).length + ', buildings=' + Object.keys(_hdAssets.buildings).length + ', decos=' + Object.keys(_hdAssets.decorations).length);
+    }
+  } catch(e) { console.warn('HD assets not available, using fallback'); }
+  // Also load ISO 2.5D assets (higher quality isometric tiles)
+  try {
+    const isoResp = await fetch('/api/game/iso-assets');
+    if (isoResp.ok) {
+      const isoData = await isoResp.json();
+      // ISO terrain as additional fallback (overrides HD if available)
+      Object.entries(isoData.terrain || {}).forEach(([name, url]) => {
+        if (!_hdImages['terrain-' + name]) {
+          const img = new Image(); img.src = url;
+          _hdImages['terrain-' + name] = img;
+        }
+      });
+      Object.entries(isoData.buildings || {}).forEach(([name, url]) => {
+        if (!_hdImages['bld-' + name]) {
+          const img = new Image(); img.src = url;
+          _hdImages['bld-' + name] = img;
+        }
+      });
+      Object.entries(isoData.decorations || {}).forEach(([name, url]) => {
+        if (!_hdImages['deco-' + name]) {
+          const img = new Image(); img.src = url;
+          _hdImages['deco-' + name] = img;
+        }
+      });
+    }
+  } catch(e) { /* iso assets optional */ }
+}
+
+async function loadMapEditorData() {
+  try {
+    const resp = await fetch('/api/editor/map');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.terrain && data.terrain.length) {
+        _mapEditorData = data;
+        const edW = data.width || data.terrain[0].length;
+        const edH = data.height || data.terrain.length;
+        if (edW && edH) {
+          MAP_W = edW; MAP_H = edH;
+          if (data.tileW) TILE_W = data.tileW;
+          if (data.tileH) TILE_H = data.tileH;
+          recalcWorldBounds();
+          centerCamera();
+          console.log(`Map: ${MAP_W}x${MAP_H}, tile=${TILE_W}x${TILE_H}, world=${WORLD_W}x${WORLD_H}`);
+        }
+        // Load elevation data
+        if (data.elevation && data.elevation.length) {
+          _elevationData = data.elevation;
+          console.log('Elevation data loaded');
+        }
+        console.log('Loaded map editor data (v' + (data.version || 1) + ')');
+      }
+    }
+  } catch (e) { /* use defaults */ }
+}
+
+function generateTerrain() {
+  // Clear existing terrain
+  TMAP.length = 0;
+  // If map editor data available, use it
+  if (_mapEditorData && _mapEditorData.terrain) {
+    for (let y = 0; y < MAP_H; y++) {
+      TMAP[y] = [];
+      for (let x = 0; x < MAP_W; x++) {
+        // Safely access editor terrain with fallback to grass (0)
+        const edRow = _mapEditorData.terrain[y];
+        TMAP[y][x] = (edRow && edRow[x] !== undefined) ? edRow[x] : 0;
+      }
+    }
+    return;
+  }
+  // Default procedural terrain (matching reference illustration)
+  for (let y = 0; y < MAP_H; y++) {
+    TMAP[y] = [];
+    for (let x = 0; x < MAP_W; x++) {
+      let t = 0; // grass default
+      // River from top center
+      if ((x === 7 || x === 8) && y <= 1) t = 2;
+      // River widens and flows down
+      else if (x >= 6 && x <= 9 && y === 2) t = 2;
+      // Irrigation channel system around paddies
+      else if (y === 3 && x >= 5 && x <= 13) t = 2;
+      else if ((x === 5 || x === 15) && y >= 4 && y <= 7) t = 2;
+      else if ((x === 10) && y >= 4 && y <= 7 && (y === 4 || y === 6)) t = 2;
+      else if (y === 8 && x >= 5 && x <= 15) t = 2;
+      // Rice paddies (4 quadrants)
+      else if (x >= 6 && x <= 9 && y >= 4 && y <= 5) t = 3;
+      else if (x >= 11 && x <= 14 && y >= 4 && y <= 5) t = 3;
+      else if (x >= 6 && x <= 9 && y >= 6 && y <= 7) t = 3;
+      else if (x >= 11 && x <= 14 && y >= 6 && y <= 7) t = 3;
+      // Wooden bridge crossing points (dirt)
+      else if (x === 10 && (y === 5 || y === 7)) t = 1;
+      // Market area (dirt/sandy ground)
+      else if (x >= 13 && x <= 20 && y <= 1) t = 1;
+      else if (x >= 14 && x <= 17 && y === 2) t = 1;
+      // Vegetable garden plots
+      else if (x >= 20 && x <= 22 && y >= 4 && y <= 7) t = 1;
+      else if (x >= 21 && x <= 22 && y >= 8 && y <= 10) t = 1;
+      // Lotus pond (bottom right)
+      else if (x >= 15 && x <= 18 && y === 12) t = 2;
+      else if (x >= 14 && x <= 19 && y >= 13 && y <= 14) t = 2;
+      else if (x >= 12 && x <= 20 && y >= 15 && y <= 16) t = 2;
+      else if (x >= 12 && x <= 18 && y === 17) t = 2;
+      else if (x === 13 && y === 14) t = 2;
+      // Stone paths
+      else if (x >= 5 && x <= 6 && y === 1) t = 4;
+      else if (x === 9 && y === 1) t = 4;
+      else if (x >= 2 && x <= 5 && y === 2) t = 4;
+      else if (x === 10 && y === 2) t = 4;
+      else if (x === 3 && y === 3) t = 4;
+      else if (x >= 7 && x <= 10 && y === 9) t = 4;
+      else if (x >= 6 && x <= 7 && y === 10) t = 4;
+      else if (x === 6 && y >= 11 && y <= 12) t = 4;
+      else if (x >= 6 && x <= 7 && y >= 12 && y <= 13) t = 4;
+      else if (x === 7 && y === 14) t = 4;
+      else if (x === 8 && y >= 13 && y <= 15) t = 4;
+      else if (x >= 18 && x <= 19 && y === 8) t = 4;
+      else if (x >= 18 && x <= 19 && y === 9) t = 4;
+      else if (x === 18 && y >= 9 && y <= 10) t = 4;
+      TMAP[y][x] = t;
+    }
+  }
+}
+
+// Plot definitions (farm fields — matching illustrated village exactly)
+const PLOT_DEFS = [
+  { id: 0,  n: '水田A·西北', x: 6,  y: 4,    w: 4,   h: 2,   type: 'paddy' },
+  { id: 1,  n: '水田B·东北', x: 11, y: 4,    w: 4,   h: 2,   type: 'paddy' },
+  { id: 2,  n: '水田C·西南', x: 6,  y: 6,    w: 4,   h: 2,   type: 'paddy' },
+  { id: 3,  n: '水田D·东南', x: 11, y: 6,    w: 4,   h: 2,   type: 'paddy' },
+  { id: 4,  n: '温室花圃',   x: 8,  y: 13,   w: 3,   h: 2,   type: 'greenhouse' },
+  { id: 5,  n: '果园',       x: 17, y: 5.5,  w: 3,   h: 2.5, type: 'orchard' },
+  { id: 6,  n: '菜地A',     x: 20, y: 8.5,  w: 3,   h: 2,   type: 'field' },
+  { id: 7,  n: '菜地B',     x: 20, y: 11,   w: 3,   h: 2,   type: 'field' },
+  { id: 8,  n: '菜地C',     x: 20, y: 13.5, w: 3,   h: 2,   type: 'field' },
+  { id: 9,  n: '莲塘',      x: 13, y: 14,   w: 5,   h: 3,   type: 'pond' },
+];
+
+// === COMMANDS ===
+const CMDS = [
+  { c: '/crop-plan',       n: '种植方案', d: '制定年度种植计划',    i: '📋', cat: '种植' },
+  { c: '/soil-analysis',   n: '土壤分析', d: '检测土壤质量与肥力',  i: '🧪', cat: '种植' },
+  { c: '/pest-alert',      n: '病虫预警', d: '监测病虫害风险',      i: '🐛', cat: '种植' },
+  { c: '/harvest-schedule',n: '采收排期', d: '安排最佳采收时间',    i: '📅', cat: '种植' },
+  { c: '/market-analysis', n: '市场调研', d: '分析行情趋势',        i: '📊', cat: '销售' },
+  { c: '/pricing-strategy',n: '定价策略', d: '制定智能定价方案',    i: '💰', cat: '销售' },
+  { c: '/livestream-plan', n: '直播策划', d: '策划直播带货活动',    i: '🎬', cat: '销售' },
+  { c: '/brand-build',     n: '品牌建设', d: '提升品牌知名度',      i: '🏷️', cat: '销售' },
+  { c: '/budget-review',   n: '预算评审', d: '审核预算执行情况',    i: '💳', cat: '运营' },
+  { c: '/weather-alert',   n: '气象预警', d: '天气预警与防灾',      i: '⛈️', cat: '运营' },
+  { c: '/quality-check',   n: '质量检测', d: '产品质量检验',        i: '✅', cat: '质量' },
+  { c: '/training-plan',   n: '培训计划', d: '村民技能培训',        i: '📚', cat: '运营' },
+  { c: '/chengdu-project', n: '成都项目', d: '启动成都市场拓展项目',  i: '🏙️', cat: '运营' },
+  { c: '/save-game',      n: '保存进度', d: '手动保存当前进度',      i: '💾', cat: '运营' },
+];
+
+// =====================================================
+// INIT GAME
+// =====================================================
+async function initGame() {
+  // Load custom assets and map editor data
+  await Promise.all([loadMapEditorData(), loadCustomAssets()]);
+
+  generateTerrain();
+
+  // Apply map editor zones if available
+  if (_mapEditorData && _mapEditorData.zones && _mapEditorData.zones.length) {
+    Object.keys(ZONES).forEach(k => delete ZONES[k]);
+    _mapEditorData.zones.forEach(z => {
+      ZONES[z.id] = { x: z.x, y: z.y, w: z.w, h: z.h };
+    });
+    // Ensure backward-compatible aliases exist
+    const aliases = {
+      'village-hall': 'temple', 'weather': 'watchtower', 'lab': 'farmhouse',
+      'training': 'farmhouse', 'livestream': 'cottage', 'logistics': 'workshop',
+      'fields-a': 'paddy-nw', 'fields-b': 'paddy-sw', 'tea-garden': 'vegplot',
+      'lotus-pond': 'pond', 'pond': 'lotus-pond'
+    };
+    Object.entries(aliases).forEach(([alias, target]) => {
+      if (!ZONES[alias] && ZONES[target]) ZONES[alias] = ZONES[target];
+    });
+    console.log('Applied ' + _mapEditorData.zones.length + ' zones from map editor');
+  }
+
+  // Apply map editor buildings if available
+  if (_mapEditorData && _mapEditorData.buildings && _mapEditorData.buildings.length) {
+    BLDGS.length = 0;
+    _mapEditorData.buildings.forEach(b => {
+      BLDGS.push({ id: b.id || b.type, type: b.type, x: b.x, y: b.y, w: b.w, h: b.h, name: b.name });
+    });
+    console.log('Applied ' + _mapEditorData.buildings.length + ' buildings from map editor');
+  }
+
+  // Apply map editor farmland if available
+  if (_mapEditorData && _mapEditorData.farmland && _mapEditorData.farmland.length) {
+    PLOT_DEFS.length = 0;
+    _mapEditorData.farmland.forEach((f, i) => {
+      PLOT_DEFS.push({ id: i, n: f.name, x: f.x, y: f.y, w: f.w, h: f.h, type: f.type });
+    });
+    console.log('Applied ' + _mapEditorData.farmland.length + ' farm plots from map editor');
+  }
+
+  // Apply map editor decorations if available
+  if (_mapEditorData && _mapEditorData.decorations && _mapEditorData.decorations.length) {
+    DECORATIONS = _mapEditorData.decorations;
+    console.log('Applied ' + DECORATIONS.length + ' decorations from map editor');
+  }
+
+  // Load agents from editor API
+  await loadAllAgents();
+
+  // Initialize plots
+  G.plots = PLOT_DEFS.map(p => ({
+    ...p,
+    crop: null,
+    days: 0,
+    fert: 60 + Math.floor(Math.random() * 35),
+    growthAnim: 0
+  }));
+
+  // Initialize agents with world positions and AI behavior
+  G.agents = AGENT_DEFS.map((a, i) => {
+    const zone = ZONES[a.zone] || ZONES['village-hall'] || ZONES['temple'] || Object.values(ZONES)[0];
+    // Use isometric coordinates for agent positions
+    const gcol = zone.x + Math.random() * zone.w;
+    const grow = zone.y + Math.random() * zone.h;
+    const startPos = gridToWorld(gcol, grow);
+    return {
+      ...a,
+      x: startPos.x, y: startPos.y,
+      tx: startPos.x, ty: startPos.y,
+      gcol: gcol, grow: grow, // grid coordinates for logic
+      homeZone: a.zone,
+      dir: 0, frame: 0, walkTimer: 0, idleTimer: 0,
+      moveCD: Math.random() * 3000, speed: 0.6 + Math.random() * 0.3,
+      status: 'idle', task: '待命中', taskTimer: 0,
+      bubble: '', bubbleTimer: 0, patrolPath: [], patrolIdx: 0
+    };
+  });
+
+  // Initialize market
+  Object.entries(CROPS).forEach(([k, v]) => {
+    G.market[k] = { p: v.price, demand: 50 + Math.random() * 50, trend: 0, hist: [v.price] };
+  });
+
+  // Auto-plant some starter crops in the new village layout
+  if (G.plots[0]) { G.plots[0].crop = 'rice'; G.plots[0].days = 30; }   // 水田A
+  if (G.plots[1]) { G.plots[1].crop = 'rice'; G.plots[1].days = 15; }   // 水田B
+  if (G.plots[4]) { G.plots[4].crop = 'strawberry'; G.plots[4].days = 5; } // 温室
+  if (G.plots[6]) { G.plots[6].crop = 'tomato'; G.plots[6].days = 20; }    // 菜地A
+  if (G.plots[5]) { G.plots[5].crop = 'orange'; G.plots[5].days = 10; }    // 果园
+
+  updateHUD();
+
+  // Try to load saved progress from server
+  const loaded = await loadGame();
+
+  if (loaded) {
+    // Restored from save — show continuation message
+    addSystemMsg(`💾 进度已恢复 · 第${G.year}年${G.sNames[G.season]}第${G.day}天`);
+    toast('success', '💾 存档恢复', `第${G.year}年${G.sNames[G.season]}第${G.day}天`);
+    if (G.agents.find(a => a.id === 'chief')) {
+      setTimeout(() => addChatMsg('chief', '大家回来了，继续上次的工作！', 'order'), 1500);
+    }
+  } else {
+    // First time — welcome + launch Chengdu Project
+    setTimeout(() => {
+      addSystemMsg('🏘️ 欢迎来到 SYNAPSE-beta 智慧农村！');
+      if (G.agents.find(a => a.id === 'chief')) {
+        addChatMsg('chief', '各位同事好，今天有重要任务要宣布！', 'order');
+      }
+    }, 2000);
+
+    // Chengdu project auto-launch after brief intro
+    setTimeout(() => {
+      if (G.agents.find(a => a.id === 'chief')) {
+        addChatMsg('chief', '经过前期考察，村委会决定正式启动——成都市场拓展项目！', 'order');
+      }
+      const agritech = G.agents.find(a => a.id === 'agritech');
+      if (agritech) setTimeout(() => addChatMsg('agritech', '好消息！成都是西南最大的农产品消费市场', 'chat'), 800);
+      const ops = G.agents.find(a => a.id === 'ops');
+      if (ops) setTimeout(() => addChatMsg('ops', '资源已提前协调好，随时可以开干', 'chat'), 1500);
+      setTimeout(() => launchChengduProject(), 3000);
+    }, 5000);
+  }
+}
+
+// =====================================================
+// ASSET LOADING
+// =====================================================
+function startLoad() {
+  const icons = AGENT_DEFS.map(a => a.i);
+  const lac = document.getElementById('lsAgents');
+  icons.forEach(ic => { const d = document.createElement('div'); d.className = 'ls-a'; d.textContent = ic; lac.appendChild(d); });
+
+  // Load sprite sheets
+  const chars = ['chief', 'farmer', 'tech', 'sales', 'delivery', 'livestream', 'inspector', 'finance'];
+  chars.forEach(c => loadImg('char-' + c, '/game/assets/sprites/char-' + c + '.png'));
+
+  const crops = ['rice', 'wheat', 'tomato', 'cabbage', 'strawberry', 'orange', 'pepper', 'lotus', 'tea', 'corn'];
+  crops.forEach(c => loadImg('crop-' + c, '/game/assets/sprites/crop-' + c + '.png'));
+
+  const blds = ['village-hall', 'market', 'warehouse', 'greenhouse', 'weather-station', 'lab', 'training', 'logistics', 'livestream'];
+  blds.forEach(b => loadImg('bld-' + b, '/game/assets/sprites/bld-' + b + '.png'));
+
+  const terrs = ['grass', 'dirt', 'water', 'paddy', 'stone', 'sand'];
+  terrs.forEach(t => loadImg('terrain-' + t, '/game/assets/sprites/terrain-' + t + '.png'));
+
+  // Large images
+  loadImg('bg', '/game/assets/village-reference.png');
+  loadImg('title', '/game/assets/synapse-title.png');
+}
+
+// =====================================================
+// GAME LOOP
+// =====================================================
+let lastTime = 0;
+const TICK_MS = 500; // One game-hour every 500ms at 1x speed
+
+function gameLoop(ts) {
+  const dt = Math.min(ts - lastTime, 100);
+  lastTime = ts;
+
+  if (!G.paused && G.speed > 0) {
+    G.tick += dt * G.speed;
+    while (G.tick >= TICK_MS) {
+      G.tick -= TICK_MS;
+      gameHourTick();
+    }
+  }
+
+  updateAgentAI(dt);
+  render(ts);
+  requestAnimationFrame(gameLoop);
+}
+
+// =====================================================
+// TIME & GAME LOGIC
+// =====================================================
+function gameHourTick() {
+  G.minute += 30;
+  if (G.minute >= 60) { G.minute = 0; G.hour++; }
+  if (G.hour >= 24) { G.hour = 0; G.day++; G.totalDays++; dailyTick(); }
+  if (G.day > 30) { G.day = 1; G.season++; if (G.season > 3) { G.season = 0; G.year++; } seasonTick(); }
+  if (G.hour % 2 === 0 && G.minute === 0) updateHUD();
+  updateTimeDisplay();
+  agentDailyInteraction();
+}
+
+function dailyTick() {
+  // Auto-save at end of each day
+  saveGame(false);
+  // Crop growth (time-based, real progression)
+  G.plots.forEach(p => {
+    if (p.crop) {
+      const growRate = p.type === 'greenhouse' ? 1.3 : 1.0;
+      const weatherBonus = G.weather.type <= 1 ? 1.1 : (G.weather.type >= 3 ? 0.8 : 1.0);
+      p.days += growRate * weatherBonus;
+
+      const c = CROPS[p.crop];
+      if (p.days >= c.grow && !p._notified) {
+        p._notified = true;
+        toast('success', `${c.i} ${p.n}成熟！`, `${c.n}可以收获了`);
+        activateAgent('harvest');
+      }
+    }
+  });
+
+  // Weather changes
+  if (Math.random() < 0.3) {
+    const pools = [[0,0,0,1,1,2],[0,0,1,1,2,3],[0,1,1,2,2,4],[1,2,4,4,5,5]];
+    const pool = pools[G.season];
+    const wt = pool[Math.floor(Math.random() * pool.length)];
+    G.weather.type = wt;
+    const wd = G.wTypes[wt];
+    G.weather.temp = wd.t[0] + Math.random() * (wd.t[1] - wd.t[0]);
+    G.weather.hum = wd.h[0] + Math.random() * (wd.h[1] - wd.h[0]);
+    if (wt === 3) { toast('warn', '⛈️ 暴雨预警', '注意排水防涝'); activateAgent('meteo'); }
+    if (wt === 5) { toast('warn', '❄️ 霜冻预警', '气温骤降，注意保暖'); activateAgent('meteo'); }
+  }
+
+  // Market weekly
+  if (G.day % 7 === 0) {
+    Object.keys(G.market).forEach(k => {
+      const m = G.market[k];
+      m.trend = (Math.random() - 0.5) * 0.25;
+      m.p = Math.max(CROPS[k].price * 0.4, m.p * (1 + m.trend));
+      m.demand = Math.max(10, m.demand + (Math.random() - 0.5) * 20);
+      m.hist.push(Math.round(m.p * 10) / 10);
+      if (m.hist.length > 16) m.hist.shift();
+    });
+    activateAgent('price');
+  }
+
+  // Random events
+  if (Math.random() < 0.03) triggerPestEvent();
+
+  // Agent random activity — now with chat integration
+  G.agents.forEach(a => {
+    if (a.taskTimer > 0) a.taskTimer--;
+    if (a.taskTimer <= 0 && a.status === 'working') {
+      a.status = 'idle'; a.task = '待命中';
+      // Sometimes report completion in chat
+      if (Math.random() < 0.3) {
+        const dept = a.dept || '后勤部';
+        const dlg = WORK_DIALOGUES[dept] || WORK_DIALOGUES['后勤部'];
+        const text = dlg.done[Math.floor(Math.random() * dlg.done.length)];
+        addChatMsg(a.id, text, 'work');
+      }
+    }
+    if (a.status === 'idle' && Math.random() < 0.04) {
+      const dept = a.dept || '后勤部';
+      const dlg = WORK_DIALOGUES[dept] || WORK_DIALOGUES['后勤部'];
+      const tasks = dlg.working;
+      a.task = tasks[Math.floor(Math.random() * tasks.length)];
+      a.status = 'working'; a.taskTimer = 3 + Math.floor(Math.random() * 5);
+      a.bubble = a.task; a.bubbleTimer = 120;
+    }
+  });
+
+  // Daily expenses
+  const dailyCost = 50 + G.pop * 3;
+  G.gold -= dailyCost; G.expenseT += dailyCost;
+
+  logEv(`第${G.day}天日常开支 ¥${dailyCost}`);
+  updateHUD();
+}
+
+function seasonTick() {
+  toast('info', `${G.sEmojis[G.season]} 季节更替`, `进入${G.sNames[G.season]}`);
+  activateAgent('ops');
+  logEv(`进入第${G.year}年${G.sNames[G.season]}`);
+  if (G.season === 0) {
+    G.rep = Math.min(100, G.rep + 5);
+    toast('success', '🎉 新年快乐', `第${G.year}年开始！声誉+5`);
+  }
+}
+
+function triggerPestEvent() {
+  const af = G.plots.filter(p => p.crop && p.days > 10);
+  if (!af.length) return;
+  const t = af[Math.floor(Math.random() * af.length)];
+  showEvent({
+    title: '🐛 病虫害警报', icon: '🐛',
+    desc: `${t.n}发现病虫害迹象！\n可能损失20-30%产量，需要尽快处理。`,
+    banner: 'linear-gradient(135deg,#1a0808,#0a0608)',
+    agents: ['pest', 'plant-dir'],
+    choices: [
+      { text: '🚜 立即防治 (¥2000)', effect: '消除虫害', action: () => { G.gold -= 2000; G.expenseT += 2000; toast('success', '✅ 防治成功', '虫害已清除'); updateHUD(); } },
+      { text: '⏳ 继续观望', effect: '可能减产', action: () => { t.days = Math.max(0, t.days - CROPS[t.crop].grow * 0.25); toast('error', '😰 虫害扩散', '产量受损'); } }
+    ]
+  });
+}
+
+// =====================================================
+// AGENT AI - Movement & Pathfinding
+// =====================================================
+function updateAgentAI(dt) {
+  G.agents.forEach(a => {
+    // Bubble decay
+    if (a.bubbleTimer > 0) a.bubbleTimer -= dt / 16;
+
+    // Movement towards target
+    const dx = a.tx - a.x, dy = a.ty - a.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > 3) {
+      const spd = a.speed * (dt / 16) * 1.2;
+      a.x += (dx / dist) * spd;
+      a.y += (dy / dist) * spd;
+
+      // Set direction based on dominant movement axis
+      if (Math.abs(dx) > Math.abs(dy)) {
+        a.dir = dx > 0 ? 3 : 1; // right or left
+      } else {
+        a.dir = dy > 0 ? 0 : 2; // down or up
+      }
+
+      // Walk animation
+      a.walkTimer += dt;
+      if (a.walkTimer > 180) {
+        a.walkTimer = 0;
+        a.frame = (a.frame + 1) % 3;
+      }
+    } else {
+      // Arrived at target
+      a.frame = 0;
+      a.idleTimer += dt;
+
+      // Pick new patrol target
+      if (a.idleTimer > a.moveCD) {
+        a.idleTimer = 0;
+        a.moveCD = 1500 + Math.random() * 4000;
+
+        const zone = ZONES[a.homeZone] || ZONES['village-hall'] || ZONES['temple'] || Object.values(ZONES)[0];
+        // Sometimes visit other zones
+        let targetZone = zone;
+        if (Math.random() < 0.15) {
+          const zoneKeys = Object.keys(ZONES);
+          const rz = ZONES[zoneKeys[Math.floor(Math.random() * zoneKeys.length)]];
+          targetZone = rz;
+        }
+
+        const tcol = targetZone.x + 0.5 + Math.random() * (targetZone.w - 1);
+        const trow = targetZone.y + 0.5 + Math.random() * (targetZone.h - 1);
+        const clCol = Math.max(1, Math.min(MAP_W - 2, tcol));
+        const clRow = Math.max(1, Math.min(MAP_H - 2, trow));
+        const tpos = gridToWorld(clCol, clRow);
+        a.tx = tpos.x;
+        a.ty = tpos.y;
+      }
+    }
+  });
+}
+
+// =====================================================
+// RENDERING ENGINE
+// =====================================================
+const weatherParticles = [];
+const ambientParticles = [];
+for (let i = 0; i < 40; i++) {
+  const off = getOriginOffset(), wb = getWorldBounds();
+  ambientParticles.push({
+    x: off.x + wb.minX + Math.random() * wb.w, y: off.y + wb.minY + Math.random() * wb.h,
+    vx: (Math.random() - 0.5) * 0.15, vy: -0.08 - Math.random() * 0.12,
+    r: 1 + Math.random() * 2, a: 0.04 + Math.random() * 0.08, phase: Math.random() * Math.PI * 2
+  });
+}
+
+function render(ts) {
+  CTX.clearRect(0, 0, W, H);
+  CTX.save();
+  CTX.scale(cam.z, cam.z);
+  CTX.translate(-cam.x, -cam.y);
+  CTX.imageSmoothingEnabled = true;
+  CTX.imageSmoothingQuality = 'high';
+
+  const off = getOriginOffset();
+
+  // === BACKGROUND — dark base ===
+  const bgGrad = CTX.createLinearGradient(0, 0, 0, WORLD_H);
+  bgGrad.addColorStop(0, '#0a1018');
+  bgGrad.addColorStop(1, '#060a14');
+  CTX.fillStyle = bgGrad;
+  CTX.fillRect(off.x + getWorldBounds().minX - 50, -50, WORLD_W + 200, WORLD_H + 200);
+
+  // === BASE MAP IMAGE (if available) ===
+  if (IMG.bg) {
+    const b = getWorldBounds();
+    CTX.save();
+    CTX.globalAlpha = 0.25;
+    CTX.drawImage(IMG.bg, off.x + b.minX, off.y + b.minY, b.w, b.h);
+    CTX.restore();
+  }
+
+  // === TERRAIN TILES (isometric) ===
+  renderTerrain(ts);
+
+  // === SOFT ISOMETRIC GRID ===
+  CTX.save();
+  CTX.globalAlpha = 0.015;
+  CTX.strokeStyle = '#a0ffc0'; CTX.lineWidth = 0.3;
+  for (let row = 0; row <= MAP_H; row++) {
+    const a = isoToScreen(0, row), b = isoToScreen(MAP_W, row);
+    CTX.beginPath(); CTX.moveTo(off.x + a.x, off.y + a.y); CTX.lineTo(off.x + b.x, off.y + b.y); CTX.stroke();
+  }
+  for (let col = 0; col <= MAP_W; col++) {
+    const a = isoToScreen(col, 0), b = isoToScreen(col, MAP_H);
+    CTX.beginPath(); CTX.moveTo(off.x + a.x, off.y + a.y); CTX.lineTo(off.x + b.x, off.y + b.y); CTX.stroke();
+  }
+  CTX.restore();
+
+  // === ZONES (isometric) ===
+  renderZonesIso(off);
+
+  // === FARM PLOTS WITH CROPS (isometric) ===
+  renderPlots(ts);
+
+  // === DEPTH-SORTED: buildings + decorations + agents ===
+  renderDepthSorted(ts, off);
+
+  // === AMBIENT PARTICLES ===
+  renderAmbient(ts);
+
+  // === WEATHER PARTICLES ===
+  renderWeather(ts);
+
+  // === DAY/NIGHT CYCLE ===
+  renderDayNight();
+
+  // === SYNAPSE NEURAL LINES ===
+  renderSynapseLines(ts);
+
+  // === POST-PROCESSING atmosphere ===
+  CTX.save();
+  const b = getWorldBounds();
+  const vw = b.w + 100, vh = b.h + 100;
+  const ox = off.x + b.minX - 50, oy = off.y + b.minY - 50;
+  const sunGrad = CTX.createLinearGradient(ox, oy, ox + vw * 0.8, oy + vh * 0.8);
+  sunGrad.addColorStop(0, 'rgba(255,240,200,0.04)'); sunGrad.addColorStop(0.5, 'rgba(255,250,230,0.01)'); sunGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  CTX.fillStyle = sunGrad; CTX.fillRect(ox, oy, vw, vh);
+  const vigGrad = CTX.createRadialGradient(ox+vw/2, oy+vh/2, Math.min(vw,vh)*0.3, ox+vw/2, oy+vh/2, Math.max(vw,vh)*0.6);
+  vigGrad.addColorStop(0, 'rgba(0,0,0,0)'); vigGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
+  CTX.fillStyle = vigGrad; CTX.fillRect(ox, oy, vw, vh);
+  CTX.globalCompositeOperation = 'overlay'; CTX.globalAlpha = 0.02; CTX.fillStyle = '#ffe8c0'; CTX.fillRect(ox, oy, vw, vh);
+  CTX.globalCompositeOperation = 'source-over'; CTX.globalAlpha = 1;
+  CTX.restore();
+
+  CTX.restore();
+
+  // === MINIMAP ===
+  renderMinimap();
+}
+
+// Terrain type constants (shared with editor)
+const TERRAIN_NAMES_G = ['grass', 'dirt', 'water', 'paddy', 'stone', 'sand'];
+const TERRAIN_COLORS_G = ['#5a9838', '#a07040', '#3888b8', '#609858', '#888890', '#c0a868'];
+const TERRAIN_SIDE_G  = ['#3a7020','#7a5028','#2068a0','#408040','#606068','#a08850'];
+
+function renderTerrain(ts) {
+  const off = getOriginOffset();
+  CTX.imageSmoothingEnabled = true; CTX.imageSmoothingQuality = 'high';
+
+  for (let row = 0; row < MAP_H; row++) {
+    for (let col = 0; col < MAP_W; col++) {
+      const tval = (TMAP[row] && TMAP[row][col] !== undefined) ? TMAP[row][col] : 0;
+      const elev = (_elevationData && _elevationData[row]) ? (_elevationData[row][col] || 0) : 0;
+      const elevH = elev * ELEV_PX;
+      const s = isoToScreen(col, row);
+      const sx = off.x + s.x, sy = off.y + s.y;
+
+      CTX.save();
+
+      // Resolve custom terrain image: supports 'custom-xxx' IDs, plain string IDs, and legacy numeric >= 8
+      let customImg = null;
+      let isWaterTile = false;
+      if (typeof tval === 'string') {
+        if (tval.startsWith('custom-')) {
+          const assetId = tval.replace('custom-', '');
+          customImg = _customTerrainImages[assetId];
+          if (!imgReady(customImg)) {
+            // Also try the full key
+            customImg = _customTerrainImages[tval];
+          }
+          // Check if water type
+          const asset = _customAssetsList.find(a => a.id === assetId);
+          if (asset && asset.category === 'water') isWaterTile = true;
+        } else {
+          customImg = _customTerrainImages[tval];
+        }
+      } else if (typeof tval === 'number' && tval >= 8) {
+        const ta = _customAssetsList.filter(a => a.category === 'terrain');
+        const la = ta[tval - 8]; if (la) customImg = _customTerrainImages[la.id];
+      }
+
+      const tname = TERRAIN_NAMES_G[tval] || 'grass';
+      const hdImg = _hdImages['terrain-' + tname];
+      const tIdx = (typeof tval === 'number' && tval < 8) ? tval : 0;
+
+      if (elevH > 0) {
+        // 3D elevated box
+        const topCol = TERRAIN_COLORS_G[tIdx] || TERRAIN_COLORS_G[0];
+        const leftCol = TERRAIN_SIDE_G[tIdx] || darkenColor(topCol, 0.6);
+        const rightCol = darkenColor(topCol, 0.75);
+        CTX.globalAlpha = 0.85;
+        drawIsoBox(CTX, sx, sy, TILE_W, TILE_H, elevH, topCol, leftCol, rightCol);
+        // Overlay image on top face
+        const img = customImg || (imgReady(hdImg) ? hdImg : null);
+        if (img && imgReady(img)) {
+          CTX.globalAlpha = 0.65;
+          CTX.save(); diamondPath(CTX, sx, sy - elevH, TILE_W, TILE_H); CTX.clip();
+          CTX.drawImage(img, sx - TILE_W/2, sy - elevH, TILE_W, TILE_H);
+          CTX.restore();
+        }
+      } else {
+        // Flat tile
+        const img = customImg || (imgReady(hdImg) ? hdImg : null);
+        if (img && imgReady(img)) {
+          CTX.globalAlpha = 0.9;
+          CTX.save(); diamondPath(CTX, sx, sy, TILE_W, TILE_H); CTX.clip();
+          CTX.drawImage(img, sx - TILE_W/2, sy, TILE_W, TILE_H);
+          CTX.restore();
+        } else {
+          // Procedural fallback
+          CTX.globalAlpha = 0.8;
+          CTX.fillStyle = TERRAIN_COLORS_G[tIdx] || TERRAIN_COLORS_G[0];
+          diamondPath(CTX, sx, sy, TILE_W, TILE_H); CTX.fill();
+          // Subtle texture
+          if (tIdx === 0) {
+            CTX.globalAlpha = 0.15;
+            CTX.fillStyle = `rgba(${90+Math.sin(col*3+row*7)*15},${160+Math.sin(col*5+row*3)*15},${65+Math.sin(col*7+row*5)*10},0.4)`;
+            diamondPath(CTX, sx, sy, TILE_W, TILE_H); CTX.fill();
+          }
+        }
+        // Edge highlight
+        CTX.globalAlpha = 0.04; CTX.strokeStyle = '#fff'; CTX.lineWidth = 0.4;
+        diamondPath(CTX, sx, sy, TILE_W, TILE_H); CTX.stroke();
+      }
+
+      // Water shimmer - supports both numeric water (2) and custom water assets
+      if (tval === 2 || isWaterTile) {
+        CTX.globalAlpha = 0.06 + Math.sin(ts * 0.0015 + col * 0.6 + row * 0.4) * 0.04;
+        CTX.fillStyle = '#80d0ff';
+        diamondPath(CTX, sx, sy - elevH, TILE_W, TILE_H); CTX.fill();
+        const sparkle = Math.sin(ts * 0.003 + col * 1.2 + row * 0.8);
+        if (sparkle > 0.85) {
+          CTX.fillStyle = `rgba(255,255,255,${(sparkle-0.85)*1.5})`;
+          CTX.fillRect(sx + Math.sin(ts*0.001+col)*6, sy - elevH + TILE_H/2 + Math.cos(ts*0.001+row)*4, 2, 2);
+        }
+      }
+
+      CTX.restore();
+    }
+  }
+}
+
+function renderZonesIso(off) {
+  if (!_mapEditorData || !_mapEditorData.zones) return;
+  _mapEditorData.zones.forEach(z => {
+    const corners = [
+      isoToScreen(z.x, z.y), isoToScreen(z.x + z.w, z.y),
+      isoToScreen(z.x + z.w, z.y + z.h), isoToScreen(z.x, z.y + z.h)
+    ];
+    CTX.save(); CTX.globalAlpha = 0.05;
+    CTX.fillStyle = z.color || '#00e676';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y);
+    corners.slice(1).forEach(c => CTX.lineTo(off.x + c.x, off.y + c.y));
+    CTX.closePath(); CTX.fill();
+    CTX.globalAlpha = 0.12; CTX.strokeStyle = z.color || '#00e676'; CTX.lineWidth = 1; CTX.stroke();
+    CTX.restore();
+  });
+}
+
+function renderDecorations(ts) {
+  // Now handled by renderDepthSorted
+}
+
+// === DEPTH-SORTED RENDERING (buildings + decorations + agents mixed) ===
+function renderDepthSorted(ts, off) {
+  const objects = [];
+
+  // Buildings
+  BLDGS.forEach((b, i) => {
+    objects.push({ kind: 'building', data: b, index: i, depth: (b.y + (b.h||0)/2) + (b.x + (b.w||0)/2) });
+  });
+
+  // Decorations
+  if (DECORATIONS && DECORATIONS.length) {
+    DECORATIONS.forEach((d, i) => {
+      objects.push({ kind: 'deco', data: d, index: i, depth: (d.y || 0) + (d.x || 0) });
+    });
+  }
+
+  // Agents
+  G.agents.forEach((a, i) => {
+    const g = worldToGrid(a.x, a.y);
+    objects.push({ kind: 'agent', data: a, index: i, depth: g.col + g.row });
+  });
+
+  objects.sort((a, b) => a.depth - b.depth);
+
+  objects.forEach(obj => {
+    if (obj.kind === 'building') renderBuildingIso(ts, off, obj.data);
+    else if (obj.kind === 'deco') renderDecoIso(ts, off, obj.data);
+    else if (obj.kind === 'agent') renderAgentIso(ts, off, obj.data);
+  });
+}
+
+function renderBuildingIso(ts, off, b) {
+  const bw = b.w || 2, bh = b.h || 2;
+  const center = isoToScreen(b.x + bw/2, b.y + bh/2);
+  const bottom = isoToScreen(b.x + bw/2, b.y + bh);
+  const cx = off.x + center.x, cy = off.y + center.y;
+  const by = off.y + bottom.y;
+
+  // Elevation under building
+  const tileRow = Math.floor(b.y + bh/2), tileCol = Math.floor(b.x + bw/2);
+  const elev = (_elevationData && _elevationData[tileRow]?.[tileCol]) ? _elevationData[tileRow][tileCol] * ELEV_PX : 0;
+
+  // Try to find the building image: HD assets, custom assets, or ISO assets
+  const isCustom = (b.type || b.id || '').startsWith('custom-');
+  const hdNameMap = {
+    'village-hall': 'village-hall', 'temple': 'village-hall',
+    'market': 'market', 'warehouse': 'warehouse',
+    'greenhouse': 'greenhouse', 'weather-station': 'weather-station',
+    'lab': 'lab', 'training': 'training',
+    'logistics': 'logistics', 'livestream': 'livestream',
+    'farmhouse': 'village-hall', 'cottage': 'market',
+    'workshop': 'warehouse', 'watermill': 'logistics', 'watchtower': 'weather-station'
+  };
+
+  let bImg = null;
+  if (isCustom) {
+    const assetId = (b.type || b.id).replace('custom-', '');
+    const asset = _customAssetsList.find(a => a.id === assetId);
+    if (asset) {
+      bImg = _customTerrainImages[assetId]; // reuse preloaded images
+      if (!imgReady(bImg)) {
+        // Lazy load
+        const img = new Image(); img.src = asset.url;
+        _customTerrainImages[assetId] = img;
+        bImg = img;
+      }
+    }
+  } else {
+    const hdName = hdNameMap[b.id] || b.id;
+    bImg = _hdImages['bld-' + hdName];
+  }
+
+  if (imgReady(bImg)) {
+    const drawW = TILE_W * bw * 0.7;
+    const drawH = drawW * (bImg.height / bImg.width);
+    const drawX = cx - drawW / 2;
+    const drawY = cy - drawH * 0.75 - elev;
+    // Ground shadow
+    CTX.save(); CTX.globalAlpha = 0.1; CTX.fillStyle = '#000';
+    CTX.beginPath(); CTX.ellipse(cx + 3, by - elev + 3, drawW * 0.3, 5, 0, 0, Math.PI * 2); CTX.fill(); CTX.restore();
+    CTX.drawImage(bImg, drawX, drawY, drawW, drawH);
+  } else {
+    // Procedural 3D box fallback
+    const buildH = 2 * TILE_H * 0.4;
+    const corners = [
+      isoToScreen(b.x, b.y), isoToScreen(b.x + bw, b.y),
+      isoToScreen(b.x + bw, b.y + bh), isoToScreen(b.x, b.y + bh)
+    ];
+    CTX.save(); CTX.globalAlpha = 0.6;
+    // Roof
+    CTX.fillStyle = '#d4a84a';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y - buildH - elev);
+    CTX.lineTo(off.x + corners[1].x, off.y + corners[1].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - buildH - elev);
+    CTX.lineTo(off.x + corners[3].x, off.y + corners[3].y - buildH - elev);
+    CTX.closePath(); CTX.fill();
+    // Left wall
+    CTX.fillStyle = '#b0883a';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[3].x, off.y + corners[3].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - buildH - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - elev);
+    CTX.lineTo(off.x + corners[3].x, off.y + corners[3].y - elev);
+    CTX.closePath(); CTX.fill();
+    // Right wall
+    CTX.fillStyle = '#c8a050';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[2].x, off.y + corners[2].y - buildH - elev);
+    CTX.lineTo(off.x + corners[1].x, off.y + corners[1].y - buildH - elev);
+    CTX.lineTo(off.x + corners[1].x, off.y + corners[1].y - elev);
+    CTX.lineTo(off.x + corners[2].x, off.y + corners[2].y - elev);
+    CTX.closePath(); CTX.fill();
+    CTX.restore();
+  }
+
+  // Label
+  CTX.font = 'bold 8px system-ui'; CTX.textAlign = 'center';
+  const labelW = CTX.measureText(b.name).width + 8;
+  const labelX = cx - labelW / 2, labelY = by - elev + 4;
+  CTX.fillStyle = 'rgba(0,0,0,0.4)';
+  CTX.beginPath(); CTX.roundRect(labelX, labelY, labelW, 12, 4); CTX.fill();
+  CTX.fillStyle = 'rgba(255,255,255,.75)';
+  CTX.fillText(b.name, cx, labelY + 9);
+}
+
+function renderDecoIso(ts, off, d) {
+  const dx = d.x || 0, dy = d.y || 0;
+  const pos = gridToWorld(dx, dy);
+  const scale = d.scale || 1;
+  const type = d.type || '';
+  const isCustom = type.startsWith('custom-');
+
+  CTX.save();
+  CTX.translate(pos.x, pos.y);
+
+  // Try custom asset image first, then HD map
+  let decoImg = null;
+  if (isCustom) {
+    const assetId = type.replace('custom-', '');
+    const asset = _customAssetsList.find(a => a.id === assetId);
+    if (asset) {
+      decoImg = _customTerrainImages[assetId];
+      if (!imgReady(decoImg)) {
+        const img = new Image(); img.src = asset.url;
+        _customTerrainImages[assetId] = img;
+        decoImg = img;
+      }
+    }
+  }
+
+  if (!decoImg || !imgReady(decoImg)) {
+    // HD decoration sprite
+    const hdDecoMap = {
+      'tree-cherry': 'tree-cherry', 'tree-oak': 'tree-oak', 'tree-large': 'tree-oak',
+      'tree-pine': 'tree-pine', 'tree-pine-large': 'tree-pine',
+      'lamp': 'village-decos', 'well': 'village-decos', 'bridge': 'village-decos', 'fence-stone': 'village-decos'
+    };
+    const hdKey = hdDecoMap[type];
+    decoImg = hdKey ? _hdImages['deco-' + hdKey] : null;
+    if (hdKey === 'village-decos') decoImg = null; // skip composite sprite
+  }
+
+  if (imgReady(decoImg)) {
+    const sz = TILE_W * 1.4 * scale;
+    const sway = (type.startsWith('tree') || isCustom) ? Math.sin(ts * 0.0007 + dx * 0.01) * 2 : 0;
+    CTX.globalAlpha = 0.1; CTX.fillStyle = '#000';
+    CTX.beginPath(); CTX.ellipse(sway, sz*0.05, sz*0.3, sz*0.06, 0, 0, Math.PI*2); CTX.fill();
+    CTX.globalAlpha = 1;
+    CTX.drawImage(decoImg, -sz/2 + sway, -sz * 0.85, sz, sz);
+  } else {
+    // Procedural fallback (simplified)
+    const sz = TILE_W * scale;
+    if (type.startsWith('tree')) {
+      const sway = Math.sin(ts * 0.0007 + dx * 0.01) * 2;
+      CTX.fillStyle = '#6B4226'; CTX.fillRect(-3, -sz*0.2, 6, sz*0.4);
+      CTX.fillStyle = type.includes('cherry') ? '#FFB7C5' : type.includes('pine') ? '#1B5E20' : '#2D5016';
+      CTX.beginPath(); CTX.arc(sway, -sz*0.35, sz*0.25, 0, Math.PI*2); CTX.fill();
+    } else {
+      CTX.globalAlpha = 0.4; CTX.font = `${sz*0.5}px serif`; CTX.textAlign = 'center';
+      const icons = { 'well':'⛲', 'lamp':'🏮', 'bridge':'🌉', 'fence':'🪵', 'rock':'🪨', 'bush':'🌿', 'flower-bed':'💐' };
+      CTX.fillText(icons[type] || '🔹', 0, 0);
+    }
+  }
+  CTX.restore();
+}
+
+function renderAgentIso(ts, off, a) {
+  const si = IMG['char-' + a.sprite];
+  const drawX = Math.round(a.x);
+  const drawY = Math.round(a.y);
+  const defaultScale = 2.0;
+
+  if (si) {
+    const fw = si.width / 3, fh = si.height / 4;
+    const sx = a.frame * fw, sy = a.dir * fh;
+    const targetH = 32 * defaultScale;
+    const agentScale = targetH / fh;
+    const dw = fw * agentScale, dh = fh * agentScale;
+    const cdx = drawX - dw / 2, cdy = drawY - dh + 4;
+
+    // Shadow
+    CTX.save(); CTX.globalAlpha = 0.18; CTX.fillStyle = '#000';
+    CTX.beginPath(); CTX.ellipse(drawX, drawY + 2, dw * 0.28, 3, 0, 0, Math.PI * 2); CTX.fill(); CTX.restore();
+
+    const bounce = (a.frame !== 0) ? -1.5 : 0;
+    CTX.drawImage(si, sx, sy, fw, fh, cdx, cdy + bounce, dw, dh);
+
+    // Working glow
+    if (a.status === 'working') {
+      CTX.save();
+      const pulse = 0.35 + Math.sin(ts * 0.004 + a.x * 0.01) * 0.15;
+      CTX.globalAlpha = pulse; CTX.strokeStyle = a.color || '#00e676'; CTX.lineWidth = 1.2;
+      CTX.beginPath(); CTX.ellipse(drawX, drawY + 2, dw * 0.3, 4, 0, 0, Math.PI * 2); CTX.stroke();
+      CTX.restore();
+    }
+  } else {
+    CTX.font = '18px serif'; CTX.textAlign = 'center';
+    CTX.fillText(a.i, drawX, drawY);
+  }
+
+  // Name tag
+  const tagText = a.n;
+  CTX.font = 'bold 7px system-ui';
+  const tw = CTX.measureText(tagText).width + 10;
+  const tagX = drawX - tw / 2, tagY = drawY - dh - 6;
+  CTX.save(); CTX.globalAlpha = 0.8;
+  CTX.fillStyle = a.status === 'working' ? 'rgba(0,160,70,.85)' : 'rgba(20,16,30,.65)';
+  CTX.beginPath(); CTX.roundRect(tagX, tagY, tw, 12, 5); CTX.fill();
+  CTX.strokeStyle = a.status === 'working' ? 'rgba(0,230,118,.3)' : 'rgba(255,255,255,.06)';
+  CTX.lineWidth = 0.5; CTX.stroke(); CTX.restore();
+  CTX.fillStyle = '#fff'; CTX.textAlign = 'center';
+  CTX.fillText(tagText, drawX, tagY + 9);
+
+  // Bubble
+  if (a.bubbleTimer > 0 && a.bubble) {
+    const bText = a.bubble;
+    CTX.font = '8px system-ui';
+    const bw = Math.min(CTX.measureText(bText).width + 14, 110);
+    const bx = drawX - bw / 2, by_ = tagY - 18;
+    const alpha = Math.min(1, a.bubbleTimer / 30);
+    CTX.save(); CTX.globalAlpha = alpha;
+    CTX.fillStyle = 'rgba(255,255,255,0.95)';
+    CTX.beginPath(); CTX.roundRect(bx, by_, bw, 15, 5); CTX.fill();
+    CTX.strokeStyle = a.color || 'rgba(0,230,118,.4)'; CTX.lineWidth = 0.6; CTX.stroke();
+    CTX.restore();
+    const displayText = bText.length > 14 ? bText.slice(0,13) + '…' : bText;
+    CTX.fillStyle = `rgba(50,40,60,${alpha})`; CTX.textAlign = 'center';
+    CTX.fillText(displayText, drawX, by_ + 11);
+  }
+  var dh = 50; // approx for name tag positioning
+}
+
+// === ISOMETRIC FARM PLOTS ===
+function renderPlots(ts) {
+  const off = getOriginOffset();
+  G.plots.forEach((p, pi) => {
+    const corners = [
+      isoToScreen(p.x, p.y), isoToScreen(p.x + p.w, p.y),
+      isoToScreen(p.x + p.w, p.y + p.h), isoToScreen(p.x, p.y + p.h)
+    ];
+    const center = isoToScreen(p.x + p.w/2, p.y + p.h/2);
+    const isHover = G.hoverPlot === pi;
+    const isReady = p.crop && p.days >= CROPS[p.crop].grow;
+
+    // Plot fill
+    CTX.save();
+    CTX.globalAlpha = isHover ? 0.12 : 0.04;
+    CTX.fillStyle = isReady ? '#ffd740' : '#00e676';
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y);
+    corners.slice(1).forEach(c => CTX.lineTo(off.x + c.x, off.y + c.y));
+    CTX.closePath(); CTX.fill();
+
+    // Border
+    CTX.globalAlpha = isReady ? 0.4 : (isHover ? 0.25 : 0.1);
+    CTX.strokeStyle = isReady ? '#ffd740' : '#00e676';
+    CTX.lineWidth = 1; CTX.setLineDash([4, 3]);
+    if (isReady) CTX.lineDashOffset = -ts * 0.008;
+    CTX.beginPath();
+    CTX.moveTo(off.x + corners[0].x, off.y + corners[0].y);
+    corners.slice(1).forEach(c => CTX.lineTo(off.x + c.x, off.y + c.y));
+    CTX.closePath(); CTX.stroke(); CTX.setLineDash([]);
+    CTX.restore();
+
+    // Crop rendering
+    const cx_ = off.x + center.x, cy_ = off.y + center.y;
+    if (p.crop) {
+      const crop = CROPS[p.crop];
+      const pct = Math.min(1, p.days / crop.grow);
+      const ci = IMG['crop-' + p.crop];
+
+      if (ci) {
+        const stage = pct >= 1 ? 3 : pct >= 0.6 ? 2 : pct >= 0.2 ? 1 : 0;
+        const sw = ci.width / 4, sh = ci.height;
+        // Draw crops in isometric grid pattern
+        const cols = Math.max(1, Math.floor(p.w * 1.5));
+        const rows = Math.max(1, Math.floor(p.h * 1.5));
+        for (let r = 0; r < rows; r++) {
+          for (let cl = 0; cl < cols; cl++) {
+            const fc = p.x + (cl + 0.5) / cols * p.w;
+            const fr = p.y + (r + 0.5) / rows * p.h;
+            const fp = gridToWorld(fc, fr);
+            const sway = Math.sin(ts * 0.0012 + cl * 1.8 + r * 2.5) * (stage > 1 ? 1.2 : 0.4);
+            const growScale = 0.7 + stage * 0.05;
+            const dsz = TILE_W * 0.4 * growScale;
+            CTX.drawImage(ci, stage * sw, 0, sw, sh, fp.x - dsz/2 + sway, fp.y - dsz, dsz, dsz);
+          }
+        }
+      }
+
+      // Growth bar
+      const barW = 50, barH = 4;
+      const barX = cx_ - barW / 2, barY = cy_ + TILE_H * 0.5;
+      CTX.fillStyle = 'rgba(0,0,0,.35)';
+      CTX.beginPath(); CTX.roundRect(barX, barY, barW, barH, 2); CTX.fill();
+      const barCol = isReady ? '#ffd740' : `hsl(${90 + 30 * pct}, 70%, ${42 + pct * 15}%)`;
+      CTX.fillStyle = barCol;
+      CTX.beginPath(); CTX.roundRect(barX, barY, Math.max(3, barW * pct), barH, 2); CTX.fill();
+
+      // Label
+      CTX.fillStyle = isReady ? '#ffd740' : 'rgba(255,255,255,.7)';
+      CTX.font = 'bold 8px system-ui'; CTX.textAlign = 'center';
+      const labelText = isReady ? `${crop.i} ${crop.n} ✨` : `${crop.i} ${crop.n} ${Math.round(pct * 100)}%`;
+      CTX.fillText(labelText, cx_, barY - 3);
+    } else {
+      CTX.save(); CTX.globalAlpha = 0.2; CTX.font = '8px system-ui'; CTX.textAlign = 'center'; CTX.fillStyle = '#fff';
+      CTX.fillText('[ 空闲 ]', cx_, cy_ + 3); CTX.restore();
+    }
+
+    // Plot name badge
+    CTX.font = 'bold 7px system-ui'; CTX.textAlign = 'left';
+    const tl = gridToWorld(p.x, p.y);
+    const nameW = CTX.measureText(p.n).width + 6;
+    CTX.fillStyle = 'rgba(0,0,0,.25)';
+    CTX.beginPath(); CTX.roundRect(tl.x - 2, tl.y - 10, nameW, 10, 3); CTX.fill();
+    CTX.fillStyle = 'rgba(255,255,255,.4)';
+    CTX.fillText(p.n, tl.x + 1, tl.y - 2);
+  });
+}
+
+function renderAmbient(ts) {
+  // Firefly / pollen particles — warmer, more magical
+  ambientParticles.forEach(p => {
+    p.x += p.vx + Math.sin(ts * 0.0005 + p.phase) * 0.08;
+    p.y += p.vy;
+    if (p.y < -10) { p.y = WORLD_H + 10; p.x = Math.random() * WORLD_W; }
+    if (p.x < -10) p.x = WORLD_W + 10;
+    if (p.x > WORLD_W + 10) p.x = -10;
+    const flicker = 0.5 + Math.sin(ts * 0.002 + p.phase) * 0.5;
+    const h = G.hour + G.minute / 60;
+    const isNight = h < 6 || h > 20;
+    const pcol = isNight ? `rgba(180,255,200,${p.a * flicker * 1.5})` : `rgba(255,240,180,${p.a * flicker * 0.6})`;
+    CTX.fillStyle = pcol;
+    CTX.beginPath();
+    CTX.arc(p.x, p.y, p.r * (isNight ? 1.3 : 0.8), 0, Math.PI * 2);
+    CTX.fill();
+    // Glow halo at night
+    if (isNight && flicker > 0.7) {
+      CTX.save();
+      CTX.globalAlpha = p.a * (flicker - 0.7) * 0.8;
+      CTX.fillStyle = 'rgba(150,255,180,0.15)';
+      CTX.beginPath();
+      CTX.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+      CTX.fill();
+      CTX.restore();
+    }
+  });
+
+  // Seasonal particles — more of them and more variety
+  if (G.season === 0) {
+    // Cherry blossom petals (spring)
+    for (let i = 0; i < 10; i++) {
+      const ppx_ = (Math.sin(ts * 0.00025 + i * 1.8) * 0.5 + 0.5) * WORLD_W;
+      const ppy_ = ((ts * 0.012 + i * 180) % (WORLD_H + 60)) - 30;
+      const rot = ts * 0.001 + i * 0.7;
+      const alpha = 0.18 + Math.sin(ts * 0.002 + i) * 0.08;
+      // Petal (drawn as rotated ellipse)
+      CTX.save();
+      CTX.translate(ppx_, ppy_);
+      CTX.rotate(rot);
+      CTX.fillStyle = i % 3 === 0 ? `rgba(255,200,220,${alpha})` : `rgba(255,175,200,${alpha})`;
+      CTX.beginPath();
+      CTX.ellipse(0, 0, 3.5, 1.8, 0, 0, Math.PI * 2);
+      CTX.fill();
+      CTX.restore();
+    }
+  } else if (G.season === 1) {
+    // Summer butterflies / dandelion seeds
+    for (let i = 0; i < 4; i++) {
+      const ppx_ = (Math.sin(ts * 0.0002 + i * 2.5) * 0.5 + 0.5) * WORLD_W;
+      const ppy_ = ((ts * 0.006 + i * 300) % (WORLD_H + 40)) - 20;
+      CTX.fillStyle = `rgba(255,255,230,${0.12 + Math.sin(ts * 0.003 + i) * 0.06})`;
+      CTX.beginPath();
+      CTX.arc(ppx_, ppy_, 1.5, 0, Math.PI * 2);
+      CTX.fill();
+    }
+  } else if (G.season === 2) {
+    // Autumn leaves — more variety
+    const leafColors = ['rgba(210,150,50,', 'rgba(195,80,30,', 'rgba(230,170,60,', 'rgba(180,60,25,'];
+    for (let i = 0; i < 8; i++) {
+      const ppx_ = (Math.sin(ts * 0.00018 + i * 2.7) * 0.5 + 0.5) * WORLD_W;
+      const ppy_ = ((ts * 0.008 + i * 220) % (WORLD_H + 50)) - 25;
+      const alpha = 0.15 + Math.sin(ts * 0.003 + i) * 0.08;
+      CTX.save();
+      CTX.translate(ppx_, ppy_);
+      CTX.rotate(ts * 0.0007 + i * 0.9);
+      CTX.fillStyle = leafColors[i % leafColors.length] + alpha + ')';
+      CTX.beginPath();
+      CTX.ellipse(0, 0, 3.5, 2, 0, 0, Math.PI * 2);
+      CTX.fill();
+      CTX.restore();
+    }
+  } else if (G.season === 3) {
+    // Winter — extra gentle snowflakes
+    for (let i = 0; i < 6; i++) {
+      const ppx_ = (Math.sin(ts * 0.00015 + i * 3.2) * 0.5 + 0.5) * WORLD_W;
+      const ppy_ = ((ts * 0.005 + i * 260) % (WORLD_H + 40)) - 20;
+      CTX.fillStyle = `rgba(230,240,255,${0.12 + Math.sin(ts * 0.002 + i) * 0.06})`;
+      CTX.beginPath();
+      CTX.arc(ppx_, ppy_, 2, 0, Math.PI * 2);
+      CTX.fill();
+    }
+  }
+}
+
+function renderWeather(ts) {
+  if (G.weather.type >= 2) {
+    const isSnow = G.weather.type === 5;
+    const count = G.weather.type === 3 ? 200 : (isSnow ? 60 : 100);
+
+    for (let i = weatherParticles.length; i < count; i++) {
+      weatherParticles.push({
+        x: Math.random() * WORLD_W,
+        y: Math.random() * WORLD_H,
+        s: isSnow ? 0.3 + Math.random() * 0.5 : 5 + Math.random() * 5,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+    while (weatherParticles.length > count) weatherParticles.pop();
+
+    weatherParticles.forEach(p => {
+      if (isSnow) {
+        p.y += p.s;
+        p.x += Math.sin(ts * 0.001 + p.phase) * 0.4;
+        CTX.fillStyle = 'rgba(255,255,255,.45)';
+        CTX.beginPath();
+        CTX.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        CTX.fill();
+      } else {
+        p.y += p.s;
+        p.x -= 1.5;
+        const a = G.weather.type === 3 ? 0.3 : 0.18;
+        CTX.strokeStyle = `rgba(140,190,240,${a})`;
+        CTX.lineWidth = G.weather.type === 3 ? 1.5 : 1;
+        CTX.beginPath();
+        CTX.moveTo(p.x, p.y);
+        CTX.lineTo(p.x + 2, p.y + 10);
+        CTX.stroke();
+      }
+      if (p.y > WORLD_H) { p.y = -10; p.x = Math.random() * WORLD_W; }
+      if (p.x < -10) p.x = WORLD_W;
+    });
+
+    // Wind
+    if (G.weather.type === 4) {
+      for (let i = 0; i < 8; i++) {
+        const y = (ts * 0.05 + i * 120) % WORLD_H;
+        CTX.strokeStyle = 'rgba(200,220,240,.06)';
+        CTX.lineWidth = 1;
+        CTX.beginPath();
+        CTX.moveTo(0, y);
+        CTX.bezierCurveTo(WORLD_W * 0.3, y - 15, WORLD_W * 0.6, y + 15, WORLD_W, y);
+        CTX.stroke();
+      }
+    }
+  } else {
+    weatherParticles.length = 0;
+  }
+}
+
+function renderDayNight() {
+  const h = G.hour + G.minute / 60;
+  let alpha = 0;
+  let tintR = 0, tintG = 0, tintB = 40;
+
+  if (h < 5) { alpha = 0.30; tintR = 5; tintG = 5; tintB = 35; }     // deep night
+  else if (h < 6) { alpha = 0.30 * (1 - (h - 5)); tintR = 35; tintG = 15; tintB = 20; } // pre-dawn
+  else if (h < 7.5) {
+    const t = (h - 6) / 1.5;
+    alpha = 0.08 * (1 - t);  // morning mist
+    tintR = 40; tintG = 30; tintB = 15;  // warm golden morning
+  }
+  else if (h < 10) {
+    alpha = 0;  // bright morning - small warm tint
+    CTX.fillStyle = 'rgba(255,245,220,0.02)';
+    CTX.fillRect(-100, -100, WORLD_W + 200, WORLD_H + 200);
+  }
+  else if (h < 16) { alpha = 0; }  // midday clear
+  else if (h < 17.5) {
+    const t = (h - 16) / 1.5;
+    alpha = t * 0.04;
+    tintR = 60; tintG = 35; tintB = 10;
+  }
+  else if (h < 19) {
+    const t = (h - 17.5) / 1.5;
+    alpha = 0.04 + t * 0.08;
+    tintR = 50; tintG = 20; tintB = 10;
+  }
+  else if (h < 21) {
+    const t = (h - 19) / 2;
+    alpha = 0.12 + t * 0.18;
+    tintR = 10; tintG = 5; tintB = 35;
+  }
+  else { alpha = 0.30; tintR = 5; tintG = 5; tintB = 35; }
+
+  if (alpha > 0.005) {
+    CTX.fillStyle = `rgba(${tintR},${tintG},${tintB},${alpha})`;
+    CTX.fillRect(-100, -100, WORLD_W + 200, WORLD_H + 200);
+  }
+
+  // Sunset golden glow — richer
+  if (h >= 16.5 && h < 19) {
+    const peak = h < 17.5 ? (h - 16.5) : (19 - h) / 1.5;
+    const g = Math.min(0.08, peak * 0.06);
+    if (g > 0) {
+      CTX.fillStyle = `rgba(255,170,50,${g})`;
+      CTX.fillRect(-100, -100, WORLD_W + 200, WORLD_H + 200);
+    }
+  }
+
+  // Dawn pink tint
+  if (h >= 5.5 && h < 7) {
+    const t = (h - 5.5) / 1.5;
+    const g = Math.sin(t * Math.PI) * 0.035;
+    CTX.fillStyle = `rgba(255,150,120,${g})`;
+    CTX.fillRect(-100, -100, WORLD_W + 200, WORLD_H + 200);
+  }
+
+  // Night stars
+  if (h < 5 || h > 21) {
+    CTX.save();
+    CTX.globalAlpha = 0.15;
+    for (let i = 0; i < 12; i++) {
+      const sx_ = (Math.sin(i * 5.1 + 0.3) * 0.5 + 0.5) * WORLD_W;
+      const sy_ = (Math.cos(i * 3.7 + 1.2) * 0.5 + 0.5) * WORLD_H * 0.3;
+      CTX.fillStyle = '#fff';
+      CTX.fillRect(sx_, sy_, 1.5, 1.5);
+    }
+    CTX.restore();
+  }
+}
+
+function renderSynapseLines(ts) {
+  CTX.save();
+  const baseAlpha = 0.04 + Math.sin(ts * 0.0008) * 0.02;
+
+  // Connect nearby working agents with glowing neural lines
+  for (let i = 0; i < G.agents.length; i++) {
+    if (G.agents[i].status !== 'working') continue;
+    for (let j = i + 1; j < G.agents.length; j++) {
+      if (G.agents[j].status !== 'working') continue;
+      const ddx = G.agents[i].x - G.agents[j].x;
+      const ddy = G.agents[i].y - G.agents[j].y;
+      const distSq = ddx * ddx + ddy * ddy;
+      if (distSq < 350 * 350) {
+        const dist = Math.sqrt(distSq);
+        const falloff = 1 - dist / 350;
+        const alpha = baseAlpha * falloff;
+
+        const ax = G.agents[i].x + 16, ay = G.agents[i].y + 16;
+        const bx = G.agents[j].x + 16, by = G.agents[j].y + 16;
+        const mx = (ax + bx) / 2;
+        const my = (ay + by) / 2 - 15 + Math.sin(ts * 0.002 + i) * 8;
+
+        // Glow line (thicker, lower alpha)
+        CTX.globalAlpha = alpha * 0.5;
+        CTX.strokeStyle = G.agents[i].color || '#00e676';
+        CTX.lineWidth = 3;
+        CTX.beginPath();
+        CTX.moveTo(ax, ay);
+        CTX.quadraticCurveTo(mx, my, bx, by);
+        CTX.stroke();
+
+        // Core line (thinner, brighter)
+        CTX.globalAlpha = alpha;
+        CTX.lineWidth = 0.8;
+        CTX.strokeStyle = '#00e676';
+        CTX.beginPath();
+        CTX.moveTo(ax, ay);
+        CTX.quadraticCurveTo(mx, my, bx, by);
+        CTX.stroke();
+
+        // Pulse dot along the line
+        const t = (ts * 0.0008 + i * 0.5 + j * 0.3) % 1;
+        const pdx = (1-t)*(1-t)*ax + 2*(1-t)*t*mx + t*t*bx;
+        const pdy = (1-t)*(1-t)*ay + 2*(1-t)*t*my + t*t*by;
+        CTX.globalAlpha = alpha * 4;
+        CTX.fillStyle = '#69f0ae';
+        CTX.beginPath();
+        CTX.arc(pdx, pdy, 2.5, 0, Math.PI * 2);
+        CTX.fill();
+        // Pulse glow
+        CTX.globalAlpha = alpha * 2;
+        CTX.fillStyle = 'rgba(105,240,174,0.3)';
+        CTX.beginPath();
+        CTX.arc(pdx, pdy, 5, 0, Math.PI * 2);
+        CTX.fill();
+      }
+    }
+  }
+  CTX.restore();
+}
+
+function renderMinimap() {
+  const mc = document.getElementById('mmC');
+  if (!mc) return;
+  const mx = mc.getContext('2d');
+  mx.fillStyle = '#060a14';
+  mx.fillRect(0, 0, 160, 110);
+
+  const wb = getWorldBounds(), off = getOriginOffset();
+  const scaleX = 160 / (wb.w + 20), scaleY = 110 / (wb.h + 20);
+  const sc = Math.min(scaleX, scaleY);
+  const padX = (160 - wb.w * sc) / 2, padY = (110 - wb.h * sc) / 2;
+
+  // Terrain diamonds
+  const tc = ['#5A8E3A', '#B09060', '#5098C0', '#7AB858', '#8A8880', '#C4B490'];
+  mx.globalAlpha = 0.5;
+  for (let row = 0; row < MAP_H; row++) {
+    for (let col = 0; col < MAP_W; col++) {
+      const tv = (TMAP[row] && TMAP[row][col] !== undefined) ? TMAP[row][col] : 0;
+      const tIdx = (typeof tv === 'number' && tv < 6) ? tv : 0;
+      const s = isoToScreen(col, row);
+      const px = padX + (off.x + s.x - wb.minX) * sc;
+      const py = padY + (off.y + s.y - wb.minY) * sc;
+      mx.fillStyle = tc[tIdx] || tc[0];
+      mx.beginPath();
+      mx.moveTo(px, py);
+      mx.lineTo(px + TILE_W/2*sc, py + TILE_H/2*sc);
+      mx.lineTo(px, py + TILE_H*sc);
+      mx.lineTo(px - TILE_W/2*sc, py + TILE_H/2*sc);
+      mx.closePath(); mx.fill();
+    }
+  }
+
+  // Buildings
+  mx.globalAlpha = 0.6;
+  mx.fillStyle = '#886030';
+  BLDGS.forEach(b => {
+    const s = isoToScreen(b.x + (b.w||1)/2, b.y + (b.h||1)/2);
+    const px = padX + (off.x + s.x - wb.minX) * sc;
+    const py = padY + (off.y + s.y - wb.minY) * sc;
+    mx.fillRect(px - 2, py - 2, 4, 4);
+  });
+
+  // Agents
+  mx.globalAlpha = 0.9;
+  G.agents.forEach(a => {
+    const px = padX + (a.x - (off.x + wb.minX)) * sc;
+    const py = padY + (a.y - (off.y + wb.minY)) * sc;
+    mx.fillStyle = a.status === 'working' ? '#00e676' : '#4a5a6e';
+    mx.fillRect(px - 1, py - 1, 2, 2);
+  });
+
+  // Camera viewport
+  mx.globalAlpha = 1;
+  mx.strokeStyle = 'rgba(0,230,118,.6)';
+  mx.lineWidth = 1;
+  const cvx = padX + (cam.x - (off.x + wb.minX)) * sc;
+  const cvy = padY + (cam.y - (off.y + wb.minY)) * sc;
+  mx.strokeRect(cvx, cvy, (W / cam.z) * sc, (H / cam.z) * sc);
+}
+
+// =====================================================
+// COORDINATE HELPERS
+// =====================================================
+function worldToScreen(wx, wy) { return { x: (wx - cam.x) * cam.z, y: (wy - cam.y) * cam.z }; }
+function screenToWorld(sx, sy) { return { x: sx / cam.z + cam.x, y: sy / cam.z + cam.y }; }
+// Check if world point hits a plot (using isometric coords)
+function hitTestPlotIso(wx, wy) {
+  const g = worldToGrid(wx, wy);
+  for (let i = 0; i < G.plots.length; i++) {
+    const p = G.plots[i];
+    if (g.col >= p.x && g.col < p.x + p.w && g.row >= p.y && g.row < p.y + p.h) return i;
+  }
+  return -1;
+}
+
+// =====================================================
+// UI FUNCTIONS
+// =====================================================
+function updateHUD() {
+  document.getElementById('rGold').textContent = fmtN(G.gold);
+  document.getElementById('rGrain').textContent = fmtN(G.grain);
+  document.getElementById('rFruit').textContent = fmtN(G.fruit);
+  document.getElementById('rVeg').textContent = fmtN(G.veg);
+  document.getElementById('rRep').textContent = G.rep;
+  document.getElementById('rPop').textContent = G.pop;
+  document.getElementById('dateDisp').textContent = `第${G.year}年 ${G.sNames[G.season]} 第${G.day}天`;
+  document.getElementById('sDot').style.background = G.sColors[G.season];
+  const wd = G.wTypes[G.weather.type];
+  document.getElementById('wxIco').textContent = wd.i;
+  document.getElementById('wxTemp').textContent = Math.round(G.weather.temp) + '°C';
+  document.getElementById('wxCond').textContent = wd.n;
+  document.getElementById('wxDet').textContent = `湿度${Math.round(G.weather.hum)}% · ${G.sNames[G.season]}`;
+  updateTimeDisplay();
+}
+
+function updateTimeDisplay() {
+  const h = String(G.hour).padStart(2, '0');
+  const m = String(G.minute).padStart(2, '0');
+  document.getElementById('timeHour').textContent = `${h}:${m}`;
+  const periods = ['深夜','深夜','深夜','凌晨','凌晨','清晨','清晨','早晨','上午','上午','上午','中午','下午','下午','下午','下午','傍晚','傍晚','黄昏','晚上','晚上','晚上','深夜','深夜'];
+  document.getElementById('timePeriod').textContent = periods[G.hour];
+}
+
+function fmtN(n) { return Math.abs(n) >= 10000 ? (n / 10000).toFixed(1) + '万' : n.toString(); }
+
+function setSpeed(s) {
+  G.speed = s; G.paused = s === 0;
+  document.querySelectorAll('.spd').forEach((b, i) => b.classList.toggle('on', i === s));
+}
+
+let activePanel = null;
+function togPanel(id) {
+  if (activePanel === id) { closePanel(); return; }
+  closePanel();
+  activePanel = id;
+  document.getElementById(id).classList.add('open');
+  document.querySelectorAll('.ab').forEach(b => b.classList.remove('on'));
+  if (id === 'pAgents') renderAgentPanel();
+  if (id === 'pFarm') renderFarmPanel();
+  if (id === 'pMarket') renderMarketPanel();
+  if (id === 'pFin') renderFinPanel();
+  if (id === 'pLog') renderLogPanel();
+}
+function closePanel() {
+  document.querySelectorAll('.sp').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.ab').forEach(b => b.classList.remove('on'));
+  activePanel = null;
+}
+
+function renderAgentPanel() {
+  const depts = {};
+  G.agents.forEach(a => { if (!depts[a.dept]) depts[a.dept] = []; depts[a.dept].push(a); });
+  const working = G.agents.filter(a => a.status === 'working').length;
+
+  let h = `<div style="font-size:10px;color:#4a5a6e;margin-bottom:8px">在线 <b style="color:#00e676">${working}</b>/${G.agents.length} · 部门 ${Object.keys(depts).length}</div>`;
+  Object.entries(depts).forEach(([d, aa]) => {
+    const dc = aa[0]?.color || '#00e676';
+    const dw = aa.filter(a => a.status === 'working').length;
+    h += `<div style="font-size:9px;font-weight:900;color:${dc};margin:10px 0 4px;padding:3px 7px;background:${dc}10;border-radius:4px;border-left:2px solid ${dc}">${d} (${dw}/${aa.length})</div>`;
+    aa.forEach(a => {
+      const zone = ZONES[a.homeZone];
+      const zoneName = BLDGS.find(b => b.id === a.homeZone)?.name || a.homeZone;
+      h += `<div class="ac" style="--dc:${dc}"><div class="ac-top">
+        <span class="ac-av"><canvas class="char-cv" data-sprite="${a.sprite}" width="36" height="36"></canvas></span>
+        <div><div class="ac-nm">${a.n}</div><div class="ac-rl">${a.dept} · T${a.tier}</div></div>
+        <span class="ac-st ${a.status === 'working' ? 'w' : 'i'}">${a.status === 'working' ? '🟢 工作中' : '⚪ 待命'}</span>
+      </div><div class="ac-task">📌 ${a.task}</div><div class="ac-loc">📍 驻地: ${zoneName}</div></div>`;
+    });
+  });
+  document.getElementById('agList').innerHTML = h;
+
+  // Draw agent avatar sprites
+  setTimeout(() => {
+    document.querySelectorAll('.char-cv').forEach(cv => {
+      const sp = cv.dataset.sprite;
+      const si = IMG['char-' + sp];
+      if (si) {
+        const c = cv.getContext('2d');
+        c.imageSmoothingEnabled = false;
+        c.drawImage(si, 0, 0, si.width / 3, si.height / 4, 2, 0, 32, 36);
+      }
+    });
+  }, 30);
+}
+
+function renderFarmPanel() {
+  const planted = G.plots.filter(p => p.crop).length;
+  const ready = G.plots.filter(p => p.crop && p.days >= CROPS[p.crop].grow).length;
+  const empty = G.plots.length - planted;
+
+  let h = `<div style="display:flex;gap:5px;margin-bottom:10px">${[
+    [planted, '种植中', '#00e676'], [ready, '可收获', '#ffd740'], [empty, '空闲', '#4a5a6e']
+  ].map(([v, l, c]) => `<div style="flex:1;background:${c}08;border:1px solid ${c}15;border-radius:7px;padding:7px;text-align:center"><div style="font-size:16px;font-weight:900;color:${c}">${v}</div><div style="font-size:7px;color:#3a4a5e">${l}</div></div>`).join('')}</div>`;
+
+  G.plots.forEach((p, i) => {
+    let st = '<span style="color:#3a4a5e">空闲</span>', prog = '';
+    if (p.crop) {
+      const c = CROPS[p.crop], pct = Math.min(100, Math.round(p.days / c.grow * 100)), rdy = pct >= 100;
+      st = `<span style="color:${rdy ? '#ffd740' : '#00e676'};font-weight:800">${c.i} ${c.n}</span>`;
+      prog = `<div style="width:100%;height:3px;background:rgba(255,255,255,.03);border-radius:2px;margin-top:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${rdy ? '#ffd740' : `hsl(${pct * 1.2},70%,50%)`};border-radius:2px;transition:width .5s"></div></div><div style="font-size:7px;color:#3a4a5e;margin-top:2px">${rdy ? '✨ 可收获' : `🕐 ${pct}% · 还需${Math.ceil(c.grow - p.days)}天`}</div>`;
+    }
+    h += `<div style="background:rgba(14,24,44,.35);border:1px solid rgba(20,40,70,.25);border-radius:7px;padding:7px 9px;margin-bottom:4px;cursor:pointer" onclick="focusPlot(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:10px;font-weight:800">${p.n}</div><div style="font-size:8px;color:#3a4a5e">肥力${p.fert}% · ${p.type === 'paddy' ? '水田' : p.type === 'greenhouse' ? '大棚' : p.type === 'orchard' ? '果园' : p.type === 'pond' ? '水塘' : '旱地'}</div></div><div style="text-align:right">${st}</div></div>${prog}</div>`;
+  });
+  document.getElementById('farmInfo').innerHTML = h;
+}
+
+function focusPlot(i) {
+  const p = G.plots[i];
+  if (!p) return;
+  const center = gridToWorld(p.x + p.w / 2, p.y + p.h / 2);
+  cam.x = center.x - W / 2 / cam.z;
+  cam.y = center.y - H / 2 / cam.z;
+}
+
+function renderMarketPanel() {
+  let h = '<div style="font-size:9px;color:#3a4a5e;margin-bottom:8px">每周价格波动 · 供需动态</div>';
+  Object.entries(G.market).forEach(([k, m]) => {
+    const c = CROPS[k];
+    const tp = (m.trend * 100).toFixed(0);
+    const tc = m.trend > 0.05 ? '#00e676' : m.trend < -0.05 ? '#ef5350' : '#ffd740';
+    // Mini price chart
+    const hist = m.hist;
+    const maxP = Math.max(...hist, 1), minP = Math.min(...hist, 0);
+    let chartSvg = '';
+    if (hist.length > 1) {
+      const cw = 80, ch = 20;
+      const pts = hist.map((v, i) => `${(i / (hist.length - 1)) * cw},${ch - ((v - minP) / (maxP - minP || 1)) * ch}`).join(' ');
+      chartSvg = `<svg width="${cw}" height="${ch}" style="opacity:.5"><polyline points="${pts}" fill="none" stroke="${tc}" stroke-width="1"/></svg>`;
+    }
+    h += `<div style="background:rgba(14,24,44,.35);border:1px solid rgba(20,40,70,.25);border-radius:7px;padding:7px 9px;margin-bottom:4px;display:flex;align-items:center;gap:7px">
+      <span style="font-size:16px">${c.i}</span>
+      <div style="flex:1"><div style="font-size:10px;font-weight:800">${c.n}</div><div style="font-size:8px;color:#3a4a5e">需求${Math.round(m.demand)}</div>${chartSvg}</div>
+      <div style="text-align:right"><div style="font-size:12px;font-weight:900;color:#ffd740">¥${m.p.toFixed(1)}</div><div style="font-size:8px;color:${tc}">${tp > 0 ? '+' : ''}${tp}%</div></div></div>`;
+  });
+
+  h += '<div style="margin-top:10px;font-size:10px;font-weight:800;color:#00e676;margin-bottom:5px">📦 出售库存</div>';
+  [{k:'grain',l:'粮食',a:G.grain,pk:'rice'},{k:'fruit',l:'水果',a:G.fruit,pk:'strawberry'},{k:'veg',l:'蔬菜',a:G.veg,pk:'tomato'}].forEach(s => {
+    if (s.a > 0) {
+      const p = G.market[s.pk]?.p || 5;
+      h += `<button onclick="sellRes('${s.k}')" style="width:100%;background:rgba(0,230,118,.03);border:1px solid rgba(0,230,118,.1);color:#fff;padding:7px 10px;border-radius:7px;cursor:pointer;margin:2px 0;font-size:10px;font-family:inherit;display:flex;justify-content:space-between"><span>${s.l} (${s.a}斤)</span><span style="color:#ffd740;font-weight:800">≈ ¥${fmtN(Math.round(s.a * p))}</span></button>`;
+    }
+  });
+  document.getElementById('mktInfo').innerHTML = h;
+}
+
+function renderFinPanel() {
+  const pr = G.incomeT - G.expenseT;
+  document.getElementById('finInfo').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
+      <div style="background:rgba(0,230,118,.04);border:1px solid rgba(0,230,118,.1);border-radius:7px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:900;color:#00e676">¥${fmtN(G.incomeT)}</div><div style="font-size:8px;color:#3a4a5e;margin-top:2px">总收入</div></div>
+      <div style="background:rgba(239,83,80,.04);border:1px solid rgba(239,83,80,.1);border-radius:7px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:900;color:#ef5350">¥${fmtN(G.expenseT)}</div><div style="font-size:8px;color:#3a4a5e;margin-top:2px">总支出</div></div>
+    </div>
+    <div style="background:${pr >= 0 ? 'rgba(255,215,0,.04)' : 'rgba(239,83,80,.04)'};border:1px solid ${pr >= 0 ? 'rgba(255,215,0,.1)' : 'rgba(239,83,80,.1)'};border-radius:7px;padding:12px;text-align:center;margin-bottom:12px">
+      <div style="font-size:22px;font-weight:900;color:${pr >= 0 ? '#00e676' : '#ef5350'}">¥${fmtN(pr)}</div>
+      <div style="font-size:8px;color:#3a4a5e;margin-top:2px">净利润</div>
+    </div>
+    <div style="background:rgba(14,24,44,.25);border-radius:7px;padding:8px;font-size:11px;color:#8a98a8;line-height:2">
+      💰 现金：<b style="color:#ffd740">¥${fmtN(G.gold)}</b><br>🌾 粮食：${G.grain}斤<br>🍓 水果：${G.fruit}斤<br>🥬 蔬菜：${G.veg}斤<br>⭐ 声誉：${G.rep}/100<br>👥 村民：${G.pop}人<br>📅 总天数：${G.totalDays}天
+    </div>`;
+}
+
+function renderLogPanel() {
+  const ls = G.log.slice(-50).reverse();
+  document.getElementById('logInfo').innerHTML = ls.length ? ls.map(e =>
+    `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.015);font-size:10px"><span style="color:#2a3a4e;font-size:8px;font-family:monospace">${e.time}</span><br><span style="color:#8a98a8">${e.text}</span></div>`
+  ).join('') : '<div style="text-align:center;color:#3a4a5e;font-size:10px;padding:20px">暂无事件记录</div>';
+}
+
+// === GAME ACTIONS ===
+function plantCrop(plot, ck) {
+  const c = CROPS[ck];
+  if (G.gold < c.cost) { toast('error', '💰 资金不足', ''); return; }
+  G.gold -= c.cost; G.expenseT += c.cost;
+  plot.crop = ck; plot.days = 0; plot._notified = false;
+  toast('success', `${c.i} 种植`, `${plot.n}种下${c.n}`);
+  activateAgent('plant-dir');
+  logEv(`${plot.n}种植${c.n}`);
+  closeEvent(); updateHUD();
+}
+
+function harvestPlot(plot) {
+  const c = CROPS[plot.crop];
+  const y_ = Math.round(c.yield * (plot.fert / 100));
+  const p = G.market[plot.crop]?.p || c.price;
+  const rev = Math.round(y_ * p);
+  if (c.type === 'grain') G.grain += y_;
+  if (c.type === 'fruit') G.fruit += y_;
+  if (c.type === 'veg') G.veg += y_;
+  G.gold += rev; G.incomeT += rev;
+  G.rep = Math.min(100, G.rep + 2);
+  plot.fert = Math.max(25, plot.fert - 8);
+  toast('success', `💰 收获！`, `${c.n} ${y_}斤 · ¥${fmtN(rev)}`);
+  activateAgent('harvest'); activateAgent('sales-dir');
+  logEv(`收获${plot.n}${c.n} ${y_}斤 ¥${rev}`);
+  plot.crop = null; plot.days = 0; plot._notified = false;
+  closeEvent(); updateHUD();
+}
+
+function sellRes(t) {
+  let a = 0, p = 0;
+  if (t === 'grain') { a = G.grain; p = G.market.rice?.p || 3; G.grain = 0; }
+  else if (t === 'fruit') { a = G.fruit; p = G.market.strawberry?.p || 20; G.fruit = 0; }
+  else if (t === 'veg') { a = G.veg; p = G.market.tomato?.p || 4; G.veg = 0; }
+  const r = Math.round(a * p); G.gold += r; G.incomeT += r;
+  toast('success', '💰 出售', `${a}斤 · ¥${fmtN(r)}`);
+  logEv(`出售 ¥${r}`); renderMarketPanel(); updateHUD();
+}
+
+function activateAgent(id) {
+  const a = G.agents.find(x => x.id === id);
+  if (a) { a.status = 'working'; a.task = '执行任务'; a.taskTimer = 5; a.bubble = '收到指令'; a.bubbleTimer = 100; }
+}
+
+function logEv(t) { G.log.push({ time: `Y${G.year} ${G.sNames[G.season]} D${G.day} ${String(G.hour).padStart(2,'0')}:${String(G.minute).padStart(2,'0')}`, text: t }); }
+
+// === TOAST ===
+function toast(type, title, body) {
+  const c = document.getElementById('toasts'), el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<div class="t-title">${title}</div>${body ? `<div class="t-body">${body}</div>` : ''}<div class="t-bar"></div>`;
+  el.onclick = () => { el.classList.add('rm'); setTimeout(() => el.remove(), 300); };
+  c.appendChild(el);
+  while (c.querySelectorAll('.toast:not(.rm)').length > 4) { const f = c.querySelector('.toast:not(.rm)'); if (f) { f.classList.add('rm'); setTimeout(() => f.remove(), 300); } }
+  setTimeout(() => { if (el.parentNode) { el.classList.add('rm'); setTimeout(() => el.remove(), 300); } }, 5000);
+}
+
+// === EVENT MODAL ===
+function showEvent(ev) {
+  G.paused = true;
+  document.getElementById('eMod').classList.add('open');
+  document.getElementById('eTit').textContent = ev.title;
+  document.getElementById('eIco').textContent = ev.icon || '';
+  document.getElementById('eDesc').textContent = ev.desc;
+  document.getElementById('eBan').style.background = ev.banner || 'linear-gradient(135deg,#0a1a0a,#081018)';
+  let agH = '';
+  if (ev.agents) ev.agents.forEach(id => { const a = G.agents.find(x => x.id === id); if (a) agH += `<span class="e-ag">${a.i} ${a.n}</span>`; });
+  document.getElementById('eAg').innerHTML = agH;
+  let chH = '';
+  ev.choices.forEach((c, i) => { chH += `<div class="ech" data-i="${i}"><div class="ech-t">${c.text}</div><div class="ech-e">${c.effect}</div></div>`; });
+  document.getElementById('eCh').innerHTML = chH;
+  window._eca = ev.choices.map(c => c.action);
+  document.querySelectorAll('.ech').forEach(el => {
+    el.onclick = () => { const i = +el.dataset.i; if (window._eca[i]) window._eca[i](); closeEvent(); };
+  });
+}
+function closeEvent() { document.getElementById('eMod').classList.remove('open'); G.paused = false; }
+
+function showWelcome() {
+  showEvent({
+    title: '🧠 欢迎来到 SYNAPSE-beta', icon: '🧠',
+    desc: 'SYNAPSE-beta — 智慧农村AI模拟经营\n\n你作为村长，带领22个AI代理管理200亩村庄。\n每位代理驻守在分配的区域中巡视工作。\n作物按真实时间体系逐步生长变化。\n\n🎯 目标：科学种植 + 多渠道销售 = 致富之路\n\n🖱️ 点击田地种植/收获\n⌨️ Space 打开指令面板\n🔢 1-5 切换信息面板\n🖱️ 拖拽移动地图 · 滚轮缩放',
+    banner: 'linear-gradient(135deg,#001a0a,#000a18,#0a0018)',
+    agents: ['chief', 'agritech', 'ops'],
+    choices: [{ text: '🚀 开始经营 SYNAPSE-beta 世界！', effect: '进入游戏', action: () => toast('success', '🧠 SYNAPSE-beta 启动', '欢迎来到智慧农村世界') }]
+  });
+}
+
+// === COMMANDS ===
+function openCmd() {
+  document.getElementById('cmdOv').classList.add('open');
+  const inp = document.getElementById('cmdI'); inp.value = ''; inp.focus();
+  renderCmds('');
+  inp.oninput = () => renderCmds(inp.value);
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') { const s = document.querySelector('.cmd-it.sel') || document.querySelector('.cmd-it'); if (s) s.click(); }
+    if (e.key === 'Escape') closeCmd();
+  };
+}
+function closeCmd() { document.getElementById('cmdOv').classList.remove('open'); }
+function renderCmds(f) {
+  f = f.toLowerCase();
+  const fl = CMDS.filter(c => c.c.includes(f) || c.n.includes(f) || c.d.includes(f));
+  const catC = { '种植': 'background:rgba(0,230,118,.06);color:#00e676', '销售': 'background:rgba(255,145,0,.06);color:#ff9100', '运营': 'background:rgba(66,165,245,.06);color:#42a5f5', '质量': 'background:rgba(206,147,216,.06);color:#ce93d8' };
+  document.getElementById('cmdList').innerHTML = fl.length ? fl.map((c, i) =>
+    `<div class="cmd-it${i === 0 ? ' sel' : ''}" onclick="execCmd('${c.c}')"><span class="cmd-ic">${c.i}</span><div class="cmd-inf"><div class="cmd-nm">${c.c}</div><div class="cmd-ds">${c.d}</div></div><span class="cmd-cat" style="${catC[c.cat] || ''}">${c.cat}</span></div>`
+  ).join('') : '<div style="padding:16px;text-align:center;color:#3a4a5e;font-size:10px">无匹配指令</div>';
+}
+function execCmd(cmd) {
+  closeCmd();
+  const sk = CMDS.find(c => c.c === cmd); if (!sk) return;
+  logEv(`执行指令 ${cmd}`);
+  toast('info', `${sk.i} ${sk.n}`, sk.d);
+
+  // Open chat hall to show the interaction
+  if (!chatHallOpen) togChatHall();
+
+  if (cmd === '/crop-plan') {
+    chiefIssueOrder('制定种植方案', ['种植部', '生态部'], '调研土壤与气候，制定最优种植方案');
+    setTimeout(() => showEvent({ title: '📋 种植方案', icon: '📋', desc: '种植部长联合3位专家完成调研\n\n推荐当季种植方案已生成，预计投入¥8.5万，利润¥9.5万。', banner: 'linear-gradient(135deg,#001a0a,#000a14)', agents: ['plant-dir', 'soil', 'meteo'], choices: [{ text: '✅ 批准方案', effect: '声誉+3', action: () => { G.rep = Math.min(100, G.rep + 3); updateHUD(); toast('success', '✅ 方案获批', ''); addChatMsg('plant-dir', '方案获批了！大家准备执行', 'report'); } }, { text: '📝 修改', effect: '重新调整', action: () => { toast('info', '📝 修改中', ''); addChatMsg('chief', '方案还要再改改，大家辛苦了', 'order'); } }] }), 10000);
+  } else if (cmd === '/market-analysis') {
+    chiefIssueOrder('市场调研分析', ['销售部', '财务部'], '分析市场动向，优化定价策略');
+    setTimeout(() => { Object.keys(G.market).forEach(k => G.market[k].demand += Math.random() * 10); toast('success', '📊 调研完成', '市场数据已更新'); if (activePanel === 'pMarket') renderMarketPanel(); addChatMsg('sales-dir', '调研数据已汇总，本季需求看涨', 'report'); }, 8000);
+  } else if (cmd === '/livestream-plan') {
+    chiefIssueOrder('直播带货计划', ['销售部', '品牌部'], '策划直播活动，协调品牌宣传');
+    setTimeout(() => { const b = Math.round(2000 + Math.random() * 5000); G.gold += b; G.incomeT += b; G.rep = Math.min(100, G.rep + 2); toast('success', '🎬 直播大卖', `¥${fmtN(b)}`); logEv(`直播收入 ¥${b}`); updateHUD(); addChatMsg('live', `今天直播效果超预期！营收¥${fmtN(b)}`, 'report'); }, 10000);
+  } else if (cmd === '/budget-review') {
+    chiefIssueOrder('财务审计', ['财务部', '后勤部'], '审核预算执行，控制开支');
+    setTimeout(() => { togPanel('pFin'); toast('success', '💰 评审完成', ''); addChatMsg('fin', '本月预算执行报告已提交村长审阅', 'report'); }, 8000);
+  } else if (cmd === '/brand-build') {
+    chiefIssueOrder('品牌升级', ['品牌部', '销售部'], '升级品牌形象，提升知名度');
+    setTimeout(() => { G.rep = Math.min(100, G.rep + 5); toast('success', '🏷️ 品牌升级', '声誉+5'); updateHUD(); addChatMsg('brand', '新品牌方案已落地，反馈很好！', 'report'); }, 9000);
+  } else if (cmd === '/training-plan') {
+    chiefIssueOrder('培训计划', ['生态部', '种植部'], '组织技能培训，提升团队能力');
+    setTimeout(() => { G.pop = Math.min(50, G.pop + 1); toast('success', '📚 培训完成', '新村民+1'); updateHUD(); addChatMsg('eco', '培训圆满结束，新成员已加入团队', 'report'); }, 8000);
+  } else if (cmd === '/quality-check') {
+    chiefIssueOrder('质量检测', ['质检部', '种植部'], '全面质检，确保产品安全');
+    setTimeout(() => { G.rep = Math.min(100, G.rep + 1); toast('success', '✅ 质检合格', ''); updateHUD(); addChatMsg('qual', '本批次质检全部通过！零农残', 'report'); }, 7000);
+  } else if (cmd === '/chengdu-project') {
+    launchChengduProject();
+  } else if (cmd === '/save-game') {
+    saveGame(true);
+  } else {
+    // Generic command
+    const depts = [...new Set(G.agents.map(a => a.dept))].slice(0, 2);
+    chiefIssueOrder(sk.n, depts, sk.d);
+  }
+}
+
+// =====================================================
+// INPUT HANDLING
+// =====================================================
+CVS.addEventListener('mousedown', e => {
+  cam.drag = true; cam.sx = e.clientX; cam.sy = e.clientY; cam.dx = e.clientX; cam.dy = e.clientY; cam.moved = false;
+});
+CVS.addEventListener('mousemove', e => {
+  const w = screenToWorld(e.clientX, e.clientY);
+  // Check plot hover using isometric coordinates
+  G.hoverPlot = hitTestPlotIso(w.x, w.y);
+  CVS.style.cursor = G.hoverPlot !== null && G.hoverPlot >= 0 ? 'pointer' : (cam.drag ? 'grabbing' : 'grab');
+
+  if (cam.drag) {
+    const mdx = e.clientX - cam.dx, mdy = e.clientY - cam.dy;
+    if (Math.abs(e.clientX - cam.sx) > 5 || Math.abs(e.clientY - cam.sy) > 5) cam.moved = true;
+    cam.x -= mdx / cam.z;
+    cam.y -= mdy / cam.z;
+    cam.dx = e.clientX; cam.dy = e.clientY;
+  }
+});
+CVS.addEventListener('mouseup', e => {
+  if (!cam.moved) {
+    const w = screenToWorld(e.clientX, e.clientY);
+    handleMapClick(w.x, w.y);
+  }
+  cam.drag = false; cam.moved = false;
+});
+CVS.addEventListener('wheel', e => {
+  const z = cam.z - (e.deltaY * 0.001);
+  cam.z = Math.max(0.6, Math.min(4, z));
+}, { passive: true });
+
+// Touch support
+let touchDist = 0;
+CVS.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) { cam.drag = true; cam.sx = e.touches[0].clientX; cam.sy = e.touches[0].clientY; cam.dx = e.touches[0].clientX; cam.dy = e.touches[0].clientY; cam.moved = false; }
+  if (e.touches.length === 2) { touchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); }
+}, { passive: true });
+CVS.addEventListener('touchmove', e => {
+  if (e.touches.length === 1 && cam.drag) {
+    if (Math.abs(e.touches[0].clientX - cam.sx) > 5 || Math.abs(e.touches[0].clientY - cam.sy) > 5) cam.moved = true;
+    cam.x -= (e.touches[0].clientX - cam.dx) / cam.z;
+    cam.y -= (e.touches[0].clientY - cam.dy) / cam.z;
+    cam.dx = e.touches[0].clientX; cam.dy = e.touches[0].clientY;
+  }
+  if (e.touches.length === 2) {
+    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    cam.z = Math.max(0.6, Math.min(4, cam.z * (d / touchDist)));
+    touchDist = d;
+  }
+}, { passive: true });
+CVS.addEventListener('touchend', e => {
+  if (!cam.moved && e.changedTouches.length === 1) {
+    const w = screenToWorld(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    handleMapClick(w.x, w.y);
+  }
+  cam.drag = false; cam.moved = false;
+});
+
+function handleMapClick(wx, wy) {
+  const g = worldToGrid(wx, wy);
+  for (const p of G.plots) {
+    if (g.col >= p.x && g.col < p.x + p.w && g.row >= p.y && g.row < p.y + p.h) {
+      if (p.crop) {
+        const c = CROPS[p.crop], pct = Math.min(100, Math.round(p.days / c.grow * 100));
+        if (pct >= 100) {
+          const mp = G.market[p.crop]?.p || c.price;
+          showEvent({ title: `🌾 ${p.n} — ${c.n}成熟`, icon: c.i, desc: `产量预估：${c.yield}斤\n市价：¥${mp.toFixed(1)}/斤\n预计收入：¥${Math.round(c.yield * mp)}`, banner: 'linear-gradient(135deg,#0a1a0a,#081018)', agents: ['harvest', 'sales-dir'], choices: [
+            { text: `🌾 收获 ${c.n}`, effect: `+${c.yield}斤`, action: () => harvestPlot(p) },
+            { text: '⏳ 继续等待', effect: '观望市价变化', action: () => {} }
+          ]});
+        } else {
+          toast('info', `${c.i} ${p.n}`, `${c.n} ${pct}% · 还需${Math.ceil(c.grow - p.days)}天`);
+        }
+      } else {
+        const avail = Object.entries(CROPS).filter(([, v]) => v.seasons.includes(G.season));
+        if (!avail.length) { toast('warn', '❄️ 无法种植', '本季无适宜作物'); return; }
+        showEvent({ title: `🌱 ${p.n}`, icon: '🌱', desc: `选择种植作物\n季节：${G.sNames[G.season]} · 肥力：${p.fert}%\n类型：${p.type === 'paddy' ? '水田' : p.type === 'greenhouse' ? '大棚(+30%速)' : p.type === 'orchard' ? '果园' : p.type === 'pond' ? '水塘' : '旱地'}`, banner: 'linear-gradient(135deg,#001a0a,#000a0a)', agents: ['plant-dir', 'seed'], choices: avail.map(([k, v]) => ({ text: `${v.i} ${v.n}`, effect: `¥${v.cost} · ${v.grow}天 · 产${v.yield}斤`, action: () => plantCrop(p, k) })) });
+      }
+      return;
+    }
+  }
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input')) return;
+  // Ctrl+S = save game
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveGame(true); return; }
+  if (e.key === ' ') { e.preventDefault(); openCmd(); }
+  if (e.key === 'Escape') { closeCmd(); closePanel(); closeEvent(); closeChatHall(); }
+  if (e.key === 'q' || e.key === 'Q') togChatHall();
+  if (e.key === '1') togPanel('pAgents');
+  if (e.key === '2') togPanel('pFarm');
+  if (e.key === '3') togPanel('pMarket');
+  if (e.key === '4') togPanel('pFin');
+  if (e.key === '5') togPanel('pLog');
+});
+
+// =====================================================
+// AGENT INTERACTION SYSTEM — Chat, Meetings, Work, Gossip
+// =====================================================
+
+// Dept color mapping
+const DEPT_COLORS = {
+  '领导层': { bg: 'rgba(255,215,0,.1)', color: '#ffd740', cls: 'dept-lead' },
+  '种植部': { bg: 'rgba(0,230,118,.1)', color: '#00e676', cls: 'dept-plant' },
+  '销售部': { bg: 'rgba(255,145,0,.1)', color: '#ff9100', cls: 'dept-sales' },
+  '财务部': { bg: 'rgba(66,165,245,.1)', color: '#42a5f5', cls: 'dept-finance' },
+  '质检部': { bg: 'rgba(206,147,216,.1)', color: '#ce93d8', cls: 'dept-quality' },
+  '品牌部': { bg: 'rgba(233,30,99,.1)', color: '#e91e63', cls: 'dept-brand' },
+  '生态部': { bg: 'rgba(139,195,74,.1)', color: '#8bc34a', cls: 'dept-eco' },
+  '后勤部': { bg: 'rgba(255,183,77,.1)', color: '#ffb74d', cls: 'dept-rear' },
+};
+
+// Chat hall state
+const chatMessages = []; // {agentId, agentName, agentIcon, dept, text, time, type:'chat'|'work'|'report'|'gossip'|'system'|'order'}
+let chatFilter = 'all'; // 'all' or dept name
+let chatHallOpen = false;
+
+// Goal tracking
+let currentGoal = null; // {title, progress:0-100, tasks:[], startTime}
+
+// News/gossip pool (current events mixed in — 2026 trends)
+const NEWS_POOL = [
+  '听说隔壁村的草莓卖到30块一斤了',
+  '最近直播带货真的很火啊',
+  '今年气候不太稳定，要多注意天气',
+  '昨天看新闻说有机蔬菜需求增长了25%',
+  '短视频平台流量越来越大了',
+  '村口的路终于修好了',
+  '电商平台补贴力度挺大的',
+  '邻村开始搞农旅结合了',
+  '今天早餐吃的馒头特别香',
+  '新来的实习生学东西挺快的',
+  '农科院那个新品种不错',
+  '智慧农业的设备越来越先进了',
+  '今年的粮补政策有调整',
+  '抖音上那个种菜博主好火',
+  '周末天气不错，适合下田',
+  // 2026 fresh news snippets
+  '成都天府绿道又开了好几家市集',
+  'AI帮种地现在都不稀奇了，隔壁县用无人机巡田',
+  '春熙路那个新农产品体验馆人气爆了',
+  '成渝经济圈的物流补贴又加了',
+  '四川盆地的光照今年特别好，适合种柑橘',
+  '新能源大棚现在能手机远程控温了',
+  '社区团购又开始卷价格了',
+  '央视采访了一个AI养猪的案例',
+  '今年两会提到要加大乡村振兴力度',
+  '听说碳交易市场对有机认证有激励',
+  '低空经济火了，无人机送货已经试点了',
+  '成都大运会后基础设施确实好了不少',
+  '隔壁镇搞了个数字乡村平台，挺先进',
+  '美团优选在我们这儿设了新仓',
+  '天气预报说下周有倒春寒，得提前防',
+];
+
+// Work dialogue templates (per dept)
+const WORK_DIALOGUES = {
+  '领导层': {
+    receive: ['收到，我马上协调各部门', '好的，立刻安排部署', '明白，我来统筹'],
+    working: ['正在和各部门沟通中…', '方案基本成型了', '还需要几个部门确认'],
+    done: ['各部门已全部就位', '协调完成，执行效率不错', '任务完成，各方反馈良好'],
+  },
+  '种植部': {
+    receive: ['了解，我去田里看看', '好嘞，马上下地检查', '收到指令，准备开工'],
+    working: ['土壤湿度正常', '这批苗长势不错', '虫害防控需要加强'],
+    done: ['田间巡检完成', '数据已更新到系统', '本轮种植任务执行完毕'],
+  },
+  '销售部': {
+    receive: ['好的，我去调研一下市场', '收到，马上对接渠道', '明白，开始准备推广'],
+    working: ['几个大客户有采购意向', '线上流量今天还可以', '正在谈批发合作'],
+    done: ['订单已确认，准备发货', '销售数据已汇总', '渠道对接完成'],
+  },
+  '财务部': {
+    receive: ['收到，我看看账目', '好的，马上核算', '了解，准备报表'],
+    working: ['这个月的开支偏高了', '收入和预期基本持平', '几笔款项需要确认'],
+    done: ['财务报表已出', '本期预算执行率82%', '账目核算完成'],
+  },
+  '质检部': {
+    receive: ['好，我去抽检一下', '收到，安排质检', '马上去取样'],
+    working: ['样品正在检测中', '农残指标合格', '有一批需要复检'],
+    done: ['检测报告已出', '本批次全部合格', '质检任务完成'],
+  },
+  '品牌部': {
+    receive: ['好的，品牌这块我来', '收到，准备设计方案', '明白了，开始策划'],
+    working: ['新包装设计稿出来了', '短视频脚本在改', '品牌故事需要优化'],
+    done: ['品牌方案已定稿', '新logo设计完成', '宣传物料已到位'],
+  },
+  '生态部': {
+    receive: ['收到，我去做环评', '好的，查看生态数据', '马上去巡查'],
+    working: ['水质指标在监测中', '绿化带长势不错', '有机认证材料在准备'],
+    done: ['环评报告已提交', '生态指标达标', '巡查报告已录入系统'],
+  },
+  '后勤部': {
+    receive: ['好嘞，后勤这边保障', '收到，马上安排', '了解，准备物资'],
+    working: ['食堂今天备了排骨', '设备在维护中', '物资采购清单已下'],
+    done: ['后勤保障到位', '设备维护完毕', '物资已全部入库'],
+  },
+};
+
+// Gossip/small talk templates — richer conversations
+const GOSSIP_TEMPLATES = [
+  (a, b) => [a, `${b.n}，早啊，吃了没？`],
+  (a, b) => [a, `话说最近有个新闻，${NEWS_POOL[Math.floor(Math.random()*NEWS_POOL.length)]}`],
+  (a, b) => [b, `${a.n}说得对，我也听说了`],
+  (a, b) => [a, `今天天气${['真好','有点热','凉快了','不太行'][Math.floor(Math.random()*4)]}，适合${['下田','摸鱼','喝茶','加班'][Math.floor(Math.random()*4)]}`],
+  (a, b) => [b, `哈哈，${['可不是嘛','你说的有道理','确实','难说'][Math.floor(Math.random()*4)]}`],
+  (a, b) => [a, `成都项目进展怎么样了？我看目标快完成了`],
+  (a, b) => [b, `还行，${['物流那边已经对接好了','品牌方案在改','渠道已经铺了三个','成本还在控'][Math.floor(Math.random()*4)]}`],
+  (a, b) => [a, `${NEWS_POOL[Math.floor(Math.random()*NEWS_POOL.length)]}，跟我们项目有关系`],
+  (a, b) => [b, `是的，${['得抓紧','回头开会讨论','我已经在跟进了','你提醒得对'][Math.floor(Math.random()*4)]}`],
+  (a, b) => [a, `刚刷到一条消息——${NEWS_POOL[Math.floor(Math.random()*NEWS_POOL.length)]}`],
+  (a, b) => [b, `这新闻${['靠谱','有意思','值得关注','跟我们有关'][Math.floor(Math.random()*4)]}`],
+  (a, b) => [a, `食堂今天${['红烧肉','回锅肉','麻婆豆腐','钵钵鸡'][Math.floor(Math.random()*4)]}，走不走？`],
+  (a, b) => [b, `走走走！干完这点活就去`],
+];
+
+// ---- Chat Hall Functions ----
+function addChatMsg(agentId, text, type = 'chat') {
+  const a = G.agents.find(x => x.id === agentId);
+  if (!a) return;
+  const msg = {
+    agentId, agentName: a.n, agentIcon: a.i, dept: a.dept || '其他',
+    text, type, time: `${String(G.hour).padStart(2,'0')}:${String(G.minute).padStart(2,'0')}`
+  };
+  chatMessages.push(msg);
+  if (chatMessages.length > 200) chatMessages.splice(0, chatMessages.length - 200);
+
+  // Set bubble on the agent in the map
+  a.bubble = text.length > 16 ? text.slice(0, 15) + '…' : text;
+  a.bubbleTimer = 150 + text.length * 3;
+
+  if (chatHallOpen) renderChatFeed();
+}
+
+function addSystemMsg(text) {
+  chatMessages.push({ agentId: null, agentName: '系统', agentIcon: '📢', dept: '', text, type: 'system', time: `${String(G.hour).padStart(2,'0')}:${String(G.minute).padStart(2,'0')}` });
+  if (chatHallOpen) renderChatFeed();
+}
+
+function togChatHall() {
+  chatHallOpen = !chatHallOpen;
+  document.getElementById('chatHall').classList.toggle('open', chatHallOpen);
+  if (chatHallOpen) { renderChatTabs(); renderChatFeed(); }
+}
+function closeChatHall() { chatHallOpen = false; document.getElementById('chatHall').classList.remove('open'); }
+
+function renderChatTabs() {
+  const depts = new Set(); G.agents.forEach(a => depts.add(a.dept || '其他'));
+  const tabs = document.getElementById('chTabs');
+  const counts = {};
+  chatMessages.forEach(m => { if (m.dept) counts[m.dept] = (counts[m.dept]||0) + 1; });
+  tabs.innerHTML = `<div class="ch-tab${chatFilter==='all'?' on':''}" onclick="setChatFilter('all')">全部<span class="tab-badge">${chatMessages.length}</span></div>` +
+    [...depts].map(d => `<div class="ch-tab${chatFilter===d?' on':''}" onclick="setChatFilter('${d}')">${d}<span class="tab-badge">${counts[d]||0}</span></div>`).join('');
+}
+
+function setChatFilter(f) { chatFilter = f; renderChatTabs(); renderChatFeed(); }
+
+function renderChatFeed() {
+  const feed = document.getElementById('chFeed');
+  const msgs = chatFilter === 'all' ? chatMessages : chatMessages.filter(m => m.dept === chatFilter || m.type === 'system');
+  const last50 = msgs.slice(-50);
+  feed.innerHTML = last50.map(m => {
+    if (m.type === 'system') return `<div class="ch-msg system"><div class="ch-content"><div class="ch-text">—— ${m.text} ——</div></div></div>`;
+    const dc = DEPT_COLORS[m.dept] || { cls: '', color: '#4a5a6e' };
+    const typeIcon = m.type === 'order' ? '📣 ' : m.type === 'report' ? '📊 ' : m.type === 'gossip' ? '💭 ' : m.type === 'work' ? '🔧 ' : '';
+    const important = m.type === 'order' || m.type === 'report';
+    return `<div class="ch-msg${important?' important':''}">
+      <div class="ch-avatar" style="background:${dc.bg || 'rgba(255,255,255,.03)'}">${m.agentIcon}</div>
+      <div class="ch-content">
+        <div class="ch-name" style="color:${dc.color||'#8a98a8'}">${m.agentName} <span class="ch-dept ${dc.cls}">${m.dept}</span></div>
+        <div class="ch-text">${typeIcon}${m.text}</div>
+        <div class="ch-time">${m.time}</div>
+      </div></div>`;
+  }).join('');
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// ---- Goal System ----
+function setGoal(title, taskCount) {
+  currentGoal = { title, progress: 0, total: taskCount, completed: 0, startTime: Date.now() };
+  updateGoalBar();
+}
+function advanceGoal(amount) {
+  if (!currentGoal) return;
+  currentGoal.completed += amount;
+  currentGoal.progress = Math.min(100, Math.round(currentGoal.completed / currentGoal.total * 100));
+  updateGoalBar();
+  if (currentGoal.progress >= 100) {
+    addSystemMsg(`🎯 目标完成: ${currentGoal.title}`);
+    setTimeout(() => { currentGoal = null; updateGoalBar(); }, 4000);
+  }
+}
+function updateGoalBar() {
+  const bar = document.getElementById('goalBar');
+  if (!currentGoal) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  document.getElementById('goalTitle').textContent = `🎯 ${currentGoal.title}`;
+  document.getElementById('goalFill').style.width = currentGoal.progress + '%';
+  document.getElementById('goalPct').textContent = currentGoal.progress + '%';
+}
+
+// ---- Department Meeting System ----
+function chiefIssueOrder(orderTitle, depts, taskDesc) {
+  const chief = G.agents.find(a => a.id === 'chief');
+  if (!chief) return;
+
+  // Chief announces in meeting
+  addSystemMsg(`📋 部门会议 · ${orderTitle}`);
+  addChatMsg('chief', `📣 各部门注意！今日指令：${orderTitle}`, 'order');
+  setGoal(orderTitle, depts.length * 3); // 3 phases per dept
+
+  // Each dept responds in sequence with richer dialogue
+  let delay = 800;
+  depts.forEach((deptName, i) => {
+    const deptAgents = G.agents.filter(a => a.dept === deptName);
+    if (!deptAgents.length) return;
+
+    // Department head responds first
+    const head = deptAgents.find(a => a.tier <= 2) || deptAgents[0];
+    const dDlg = WORK_DIALOGUES[deptName] || WORK_DIALOGUES['后勤部'];
+
+    setTimeout(() => {
+      // Phase 1: Receive & announce planned actions
+      const rcv = dDlg.receive[Math.floor(Math.random() * dDlg.receive.length)];
+      addChatMsg(head.id, rcv, 'work');
+      activateAgentFull(head.id, taskDesc || orderTitle);
+      advanceGoal(1);
+    }, delay);
+
+    setTimeout(() => {
+      // Sub-agents announce their tasks too
+      const workers = deptAgents.filter(a => a.id !== head.id).slice(0, 2);
+      workers.forEach((w, j) => {
+        setTimeout(() => {
+          const wrk = dDlg.working[Math.floor(Math.random() * dDlg.working.length)];
+          addChatMsg(w.id, wrk, 'work');
+          activateAgentFull(w.id, taskDesc || orderTitle);
+        }, j * 600);
+      });
+    }, delay + 2000);
+
+    setTimeout(() => {
+      // Phase 2: Progress update with specific detail
+      const wrk = dDlg.working[Math.floor(Math.random() * dDlg.working.length)];
+      addChatMsg(head.id, wrk, 'work');
+      advanceGoal(1);
+    }, delay + 4500);
+
+    setTimeout(() => {
+      // Phase 3: Report results
+      const done = dDlg.done[Math.floor(Math.random() * dDlg.done.length)];
+      addChatMsg(head.id, `✅ ${done}`, 'report');
+      advanceGoal(1);
+    }, delay + 7500);
+
+    delay += 2500;
+  });
+
+  // Chief summarizes at the end
+  setTimeout(() => {
+    addChatMsg('chief', `各部门辛苦了，${orderTitle}执行情况良好 👏`, 'order');
+  }, delay + 6000);
+}
+
+function activateAgentFull(id, task) {
+  const a = G.agents.find(x => x.id === id);
+  if (a) {
+    a.status = 'working';
+    a.task = task || '执行任务';
+    a.taskTimer = 8 + Math.floor(Math.random() * 6);
+    // Move towards relevant zone (isometric coordinates)
+    const zone = ZONES[a.homeZone] || ZONES['village-hall'];
+    const tcol = zone.x + 0.5 + Math.random() * (zone.w - 1);
+    const trow = zone.y + 0.5 + Math.random() * (zone.h - 1);
+    const clampedCol = Math.max(1, Math.min(MAP_W - 2, tcol));
+    const clampedRow = Math.max(1, Math.min(MAP_H - 2, trow));
+    const tp = gridToWorld(clampedCol, clampedRow);
+    a.tx = tp.x; a.ty = tp.y;
+  }
+}
+
+// ---- Gossip / Small Talk System ----
+let gossipCD = 0;
+function tryGossip() {
+  gossipCD--;
+  if (gossipCD > 0) return;
+  gossipCD = 2 + Math.floor(Math.random() * 4); // every 2-6 game hours (more frequent)
+
+  // Pick two agents — working agents can gossip briefly too
+  const available = G.agents.filter(a => a.status === 'idle' || (a.status === 'working' && Math.random() < 0.3));
+  if (available.length < 2) return;
+
+  const a1 = available[Math.floor(Math.random() * available.length)];
+  let a2;
+  // Prefer same dept
+  const sameDept = available.filter(x => x.dept === a1.dept && x.id !== a1.id);
+  if (sameDept.length && Math.random() < 0.6) {
+    a2 = sameDept[Math.floor(Math.random() * sameDept.length)];
+  } else {
+    const others = available.filter(x => x.id !== a1.id);
+    if (!others.length) return;
+    a2 = others[Math.floor(Math.random() * others.length)];
+  }
+
+  // Generate gossip exchange
+  const tmpl = GOSSIP_TEMPLATES[Math.floor(Math.random() * GOSSIP_TEMPLATES.length)];
+  const [speaker, text] = tmpl(a1, a2);
+  addChatMsg(speaker.id, text, 'gossip');
+
+  // The other often replies
+  if (Math.random() < 0.7) {
+    const other = speaker.id === a1.id ? a2 : a1;
+    const replies = [
+      '哈哈确实', '是的呢', '有道理', '嗯嗯', '回头聊',
+      '走走走，去看看', '好的好的', '我也这么觉得',
+      '成都那边反馈不错', '干完活聊',
+    ];
+    setTimeout(() => {
+      addChatMsg(other.id, replies[Math.floor(Math.random() * replies.length)], 'gossip');
+    }, 800);
+  }
+}
+
+// ---- Enhanced Daily Tick — Agents now interact ----
+function agentDailyInteraction() {
+  // Morning briefing (8:00)
+  if (G.hour === 8 && G.minute === 0) {
+    addSystemMsg(`☀️ 早安！第${G.day}天工作开始`);
+    const chief = G.agents.find(a => a.id === 'chief');
+    if (chief) {
+      setTimeout(() => addChatMsg('chief', `大家早上好，今天继续加油！成都项目是重点`, 'order'), 300);
+    }
+    // Random agent morning greeting
+    const randomA = G.agents[Math.floor(Math.random() * G.agents.length)];
+    setTimeout(() => addChatMsg(randomA.id, ['早上好~', '新的一天开始了', '今天状态不错', '成都项目冲鸭！'][Math.floor(Math.random()*4)], 'gossip'), 800);
+  }
+
+  // Random work report (every 3 hours during workday)
+  if (G.hour % 3 === 0 && G.minute === 0 && G.hour >= 9 && G.hour <= 17) {
+    const working = G.agents.filter(a => a.status === 'working');
+    if (working.length) {
+      const reporter = working[Math.floor(Math.random() * working.length)];
+      const dept = reporter.dept || '后勤部';
+      const dlg = WORK_DIALOGUES[dept] || WORK_DIALOGUES['后勤部'];
+      const text = dlg.working[Math.floor(Math.random() * dlg.working.length)];
+      addChatMsg(reporter.id, text, 'work');
+    }
+    // Also advance Chengdu project if running
+    if (chengduProject && chengduProject.running) tickChengduProject();
+  }
+
+  // Midday break — someone gossips about news
+  if (G.hour === 12 && G.minute === 0) {
+    addSystemMsg('🍚 午休时间');
+    const all = G.agents;
+    if (all.length >= 2) {
+      const a = all[Math.floor(Math.random()*all.length)];
+      const news = NEWS_POOL[Math.floor(Math.random()*NEWS_POOL.length)];
+      setTimeout(() => addChatMsg(a.id, `午饭时间～刚刷到：${news}`, 'gossip'), 400);
+    }
+  }
+
+  // Evening wrap-up (18:00)
+  if (G.hour === 18 && G.minute === 0) {
+    addSystemMsg(`🌆 下班时间到，大家辛苦了`);
+    const ops = G.agents.find(a => a.id === 'ops');
+    if (ops) {
+      setTimeout(() => addChatMsg('ops', `今日总结：运营数据已更新，大家早点休息`, 'report'), 500);
+    }
+    // Chengdu project daily summary
+    if (chengduProject && chengduProject.running) {
+      const chief = G.agents.find(a => a.id === 'chief');
+      if (chief) setTimeout(() => addChatMsg('chief', `成都项目进度 ${currentGoal ? currentGoal.progress : 0}%，各部门继续推进`, 'order'), 1200);
+    }
+  }
+
+  // Gossip happens during work hours
+  if (G.hour >= 7 && G.hour <= 20) tryGossip();
+}
+
+// =====================================================
+// CHENGDU PROJECT — Main Objective System
+// =====================================================
+let chengduProject = null;
+
+const CHENGDU_PHASES = [
+  {
+    name: '市场调研',
+    depts: ['销售部', '领导层'],
+    steps: 3,
+    dialogues: [
+      { agent: 'chief', text: '成都项目正式启动！第一步：市场调研', type: 'order' },
+      { agent: 'sales-dir', text: '收到！我带队去成都摸底，看看渠道和需求', type: 'work' },
+      { agent: 'price', text: '成都农产品行情我已经拉了数据，正在分析', type: 'work' },
+      { agent: 'ops', text: '运营这边配合，出差审批已经走完', type: 'work' },
+      { agent: 'ecom', text: '线上渠道数据也一起看，成都电商氛围不错', type: 'work' },
+      { agent: 'sales-dir', text: '✅ 成都调研完成！市场容量超预期', type: 'report' },
+    ]
+  },
+  {
+    name: '产品定制',
+    depts: ['种植部', '质检部', '品牌部'],
+    steps: 4,
+    dialogues: [
+      { agent: 'chief', text: '调研报告很好！接下来定制成都专供产品线', type: 'order' },
+      { agent: 'plant-dir', text: '了解，安排选品和试种，成都人偏好鲜食类', type: 'work' },
+      { agent: 'seed', text: '推荐几个适合四川盆地气候的品种', type: 'work' },
+      { agent: 'qual', text: '质检标准按成都市场要求升级，已出方案', type: 'work' },
+      { agent: 'brand', text: '包装设计走天府文化风，方案已出三版', type: 'work' },
+      { agent: 'soil', text: '土壤配方调整完毕，适配新品种需求', type: 'work' },
+      { agent: 'plant-dir', text: '✅ 产品线定制完成，首批样品已产出', type: 'report' },
+    ]
+  },
+  {
+    name: '渠道对接',
+    depts: ['销售部', '后勤部', '财务部'],
+    steps: 3,
+    dialogues: [
+      { agent: 'chief', text: '产品准备好了！开始对接成都各销售渠道', type: 'order' },
+      { agent: 'sales-dir', text: '已联系三家成都商超和两个社区团购平台', type: 'work' },
+      { agent: 'whole', text: '批发渠道谈得差不多了，价格有竞争力', type: 'work' },
+      { agent: 'live', text: '成都本地达人已约好，下周可以开播', type: 'work' },
+      { agent: 'logi', text: '冷链物流方案确定，成都次日达没问题', type: 'work' },
+      { agent: 'fin', text: '渠道费用已核算，预算可控', type: 'work' },
+      { agent: 'rear', text: '仓储那边已经预留了成都专区', type: 'work' },
+      { agent: 'sales-dir', text: '✅ 六个渠道全部签约！', type: 'report' },
+    ]
+  },
+  {
+    name: '首批发货',
+    depts: ['后勤部', '种植部', '质检部'],
+    steps: 3,
+    dialogues: [
+      { agent: 'chief', text: '万事俱备！启动首批发货', type: 'order' },
+      { agent: 'harvest', text: '首批货已采收打包，品质很棒', type: 'work' },
+      { agent: 'qual', text: '出货前抽检全部合格，农残为零', type: 'work' },
+      { agent: 'logi', text: '物流车已出发，预计明天到达成都', type: 'work' },
+      { agent: 'rear', text: '后勤保障到位，包装材料充足', type: 'work' },
+      { agent: 'logi', text: '✅ 首批货已签收！成都客户反馈很好', type: 'report' },
+    ]
+  },
+  {
+    name: '品牌推广',
+    depts: ['品牌部', '销售部'],
+    steps: 3,
+    dialogues: [
+      { agent: 'chief', text: '趁热打铁，开始成都品牌推广！', type: 'order' },
+      { agent: 'brand', text: '线下活动策划好了，在春熙路做快闪', type: 'work' },
+      { agent: 'live', text: '直播已开播！成都观众互动很热情', type: 'work' },
+      { agent: 'ecom', text: '抖音成都话题已上热搜，曝光量不错', type: 'work' },
+      { agent: 'brand', text: '✅ 品牌推广效果超预期，知名度大幅提升', type: 'report' },
+    ]
+  },
+  {
+    name: '项目总结',
+    depts: ['领导层', '财务部'],
+    steps: 2,
+    dialogues: [
+      { agent: 'chief', text: '成都项目进入收尾阶段，各部门汇总成果', type: 'order' },
+      { agent: 'fin', text: '财务数据汇总完毕：利润率超目标15%', type: 'report' },
+      { agent: 'ops', text: '运营报告已出，复购率很亮眼', type: 'report' },
+      { agent: 'chief', text: '🎉 成都项目圆满完成！大家辛苦了！', type: 'order' },
+    ]
+  },
+];
+
+function launchChengduProject() {
+  if (chengduProject && chengduProject.running) return;
+  const totalSteps = CHENGDU_PHASES.reduce((s, p) => s + p.steps, 0);
+  chengduProject = { running: true, phase: 0, step: 0, dlgIdx: 0, tickTimer: 0 };
+  setGoal('完成成都项目', totalSteps);
+  addSystemMsg('🏙️ 成都项目正式启动！目标：打入成都市场');
+
+  // Open chat hall so user sees the action
+  if (!chatHallOpen) togChatHall();
+
+  // Kick off phase 0
+  startChengduPhase(0);
+}
+
+function startChengduPhase(phaseIdx) {
+  if (phaseIdx >= CHENGDU_PHASES.length) {
+    // Project complete!
+    chengduProject.running = false;
+    addSystemMsg('🎊 成都项目全部完成！');
+    G.rep = Math.min(100, G.rep + 10);
+    G.gold += 15000;
+    G.incomeT += 15000;
+    updateHUD();
+    toast('success', '🎉 成都项目完成', '声誉+10  收入+¥1.5万');
+    return;
+  }
+
+  chengduProject.phase = phaseIdx;
+  chengduProject.dlgIdx = 0;
+  const phase = CHENGDU_PHASES[phaseIdx];
+  addSystemMsg(`📌 阶段 ${phaseIdx + 1}/${CHENGDU_PHASES.length}：${phase.name}`);
+
+  // Activate dept agents
+  phase.depts.forEach(dept => {
+    const agents = G.agents.filter(a => a.dept === dept);
+    agents.forEach(a => activateAgentFull(a.id, `成都项目·${phase.name}`));
+  });
+
+  // Play dialogues in sequence
+  playChengduDialogues(phaseIdx);
+}
+
+function playChengduDialogues(phaseIdx) {
+  const phase = CHENGDU_PHASES[phaseIdx];
+  if (!phase) return;
+  let delay = 600;
+  phase.dialogues.forEach((dlg, i) => {
+    setTimeout(() => {
+      if (!chengduProject || !chengduProject.running) return;
+      // Find agent — fallback to any if not found
+      const a = G.agents.find(x => x.id === dlg.agent);
+      if (a) {
+        addChatMsg(a.id, dlg.text, dlg.type);
+        if (dlg.type === 'work') activateAgentFull(a.id, `成都项目·${phase.name}`);
+      }
+      // On last dialogue of phase, mark steps complete
+      if (i === phase.dialogues.length - 1) {
+        for (let s = 0; s < phase.steps; s++) advanceGoal(1);
+      }
+    }, delay);
+    delay += 1200 + Math.random() * 800;
+  });
+
+  // After dialogues, move to next phase
+  setTimeout(() => {
+    if (!chengduProject || !chengduProject.running) return;
+    startChengduPhase(phaseIdx + 1);
+  }, delay + 3000);
+}
+
+function tickChengduProject() {
+  // Called periodically to add ambient work chatter during the project
+  if (!chengduProject || !chengduProject.running) return;
+  const phase = CHENGDU_PHASES[chengduProject.phase];
+  if (!phase) return;
+  // Random working agent says something
+  const working = G.agents.filter(a => a.status === 'working');
+  if (working.length) {
+    const w = working[Math.floor(Math.random() * working.length)];
+    const dept = w.dept || '后勤部';
+    const dlg = WORK_DIALOGUES[dept] || WORK_DIALOGUES['后勤部'];
+    addChatMsg(w.id, dlg.working[Math.floor(Math.random() * dlg.working.length)], 'work');
+  }
+}
+
+// =====================================================
+// SAVE / LOAD SYSTEM — Server-side persistence
+// =====================================================
+let _saveInProgress = false;
+let _lastSaveTime = 0;
+const SAVE_INTERVAL = 60000; // auto-save every 60 seconds real time
+const SAVE_COOLDOWN = 5000;  // minimum 5s between saves
+
+function collectSaveState() {
+  return {
+    slot: 'auto',
+    // Time
+    year: G.year, season: G.season, day: G.day, hour: G.hour, minute: G.minute,
+    totalDays: G.totalDays,
+    // Resources
+    gold: G.gold, grain: G.grain, fruit: G.fruit, veg: G.veg,
+    rep: G.rep, pop: G.pop,
+    incomeT: G.incomeT, expenseT: G.expenseT,
+    // Weather
+    weather: { type: G.weather.type, temp: G.weather.temp, hum: G.weather.hum },
+    // Plots (crop, growth days, fertility)
+    plots: G.plots.map(p => ({
+      id: p.id, crop: p.crop, days: p.days, fert: p.fert, _notified: p._notified || false
+    })),
+    // Market state
+    market: Object.fromEntries(
+      Object.entries(G.market).map(([k, v]) => [k, { p: v.p, demand: v.demand, trend: v.trend, hist: v.hist }])
+    ),
+    // Agent status (only mutable state — don't save position/animation)
+    agents: G.agents.map(a => ({
+      id: a.id, status: a.status, task: a.task, taskTimer: a.taskTimer
+    })),
+    // Log (last 50 entries)
+    log: G.log.slice(-50),
+    // Chat (last 80 messages)
+    chatMessages: chatMessages.slice(-80),
+    // Chengdu project state
+    chengduProject: chengduProject ? { ...chengduProject } : null,
+    // Goal
+    currentGoal: currentGoal ? { ...currentGoal } : null,
+    // Speed
+    speed: G.speed,
+  };
+}
+
+async function saveGame(showToast = false) {
+  if (_saveInProgress) return;
+  const now = Date.now();
+  if (now - _lastSaveTime < SAVE_COOLDOWN) return;
+  _saveInProgress = true;
+  _lastSaveTime = now;
+  try {
+    const state = collectSaveState();
+    const resp = await fetch('/api/game/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      if (showToast) toast('success', '💾 进度已保存', `${new Date().toLocaleTimeString()}`);
+      updateSaveIndicator('saved');
+    } else {
+      if (showToast) toast('error', '❌ 保存失败', result.error || '未知错误');
+    }
+  } catch (e) {
+    console.error('Save failed:', e);
+    if (showToast) toast('error', '❌ 保存失败', e.message);
+  }
+  _saveInProgress = false;
+}
+
+async function loadGame() {
+  try {
+    const resp = await fetch('/api/game/load?slot=auto');
+    const result = await resp.json();
+    if (!result.found || !result.data) return false;
+    const d = result.data;
+
+    // Restore time
+    G.year = d.year ?? 1;
+    G.season = d.season ?? 0;
+    G.day = d.day ?? 1;
+    G.hour = d.hour ?? 6;
+    G.minute = d.minute ?? 0;
+    G.totalDays = d.totalDays ?? 0;
+    G.speed = d.speed ?? 1;
+
+    // Restore resources
+    G.gold = d.gold ?? 50000;
+    G.grain = d.grain ?? 0;
+    G.fruit = d.fruit ?? 0;
+    G.veg = d.veg ?? 0;
+    G.rep = d.rep ?? 60;
+    G.pop = d.pop ?? 12;
+    G.incomeT = d.incomeT ?? 0;
+    G.expenseT = d.expenseT ?? 0;
+
+    // Restore weather
+    if (d.weather) {
+      G.weather.type = d.weather.type ?? 0;
+      G.weather.temp = d.weather.temp ?? 18;
+      G.weather.hum = d.weather.hum ?? 65;
+    }
+
+    // Restore plots
+    if (d.plots && Array.isArray(d.plots)) {
+      d.plots.forEach(sp => {
+        const p = G.plots.find(x => x.id === sp.id);
+        if (p) {
+          p.crop = sp.crop;
+          p.days = sp.days ?? 0;
+          p.fert = sp.fert ?? 70;
+          p._notified = sp._notified ?? false;
+        }
+      });
+    }
+
+    // Restore market
+    if (d.market) {
+      Object.entries(d.market).forEach(([k, v]) => {
+        if (G.market[k]) {
+          G.market[k].p = v.p ?? G.market[k].p;
+          G.market[k].demand = v.demand ?? G.market[k].demand;
+          G.market[k].trend = v.trend ?? 0;
+          G.market[k].hist = v.hist || G.market[k].hist;
+        }
+      });
+    }
+
+    // Restore agent status
+    if (d.agents && Array.isArray(d.agents)) {
+      d.agents.forEach(sa => {
+        const a = G.agents.find(x => x.id === sa.id);
+        if (a) {
+          a.status = sa.status || 'idle';
+          a.task = sa.task || '待命中';
+          a.taskTimer = sa.taskTimer || 0;
+        }
+      });
+    }
+
+    // Restore log
+    if (d.log && Array.isArray(d.log)) {
+      G.log.length = 0;
+      d.log.forEach(l => G.log.push(l));
+    }
+
+    // Restore chat messages
+    if (d.chatMessages && Array.isArray(d.chatMessages)) {
+      chatMessages.length = 0;
+      d.chatMessages.forEach(m => chatMessages.push(m));
+    }
+
+    // Restore Chengdu project
+    if (d.chengduProject) {
+      chengduProject = { ...d.chengduProject };
+    }
+
+    // Restore goal
+    if (d.currentGoal) {
+      currentGoal = { ...d.currentGoal };
+      updateGoalBar();
+    }
+
+    // Update UI
+    updateHUD();
+    updateTimeDisplay();
+    updateSpeedUI();
+
+    console.log(`Loaded save: Y${G.year} ${G.sNames[G.season]} D${G.day} | gold=${G.gold}`);
+    return true;
+  } catch (e) {
+    console.warn('Load game failed:', e);
+    return false;
+  }
+}
+
+function updateSpeedUI() {
+  document.querySelectorAll('.spd').forEach(b => b.classList.remove('on'));
+  const btns = document.querySelectorAll('.spd');
+  btns.forEach(b => {
+    const txt = b.textContent.trim();
+    if ((txt === '⏸' && G.speed === 0) ||
+        (txt === '▶' && G.speed === 1) ||
+        (txt === '▶▶' && G.speed === 2) ||
+        (txt === '▶▶▶' && G.speed === 3)) {
+      b.classList.add('on');
+    }
+  });
+}
+
+function updateSaveIndicator(status) {
+  const el = document.getElementById('saveIndicator');
+  if (!el) return;
+  if (status === 'saved') {
+    el.textContent = '💾 已保存';
+    el.style.color = '#00e676';
+  } else if (status === 'saving') {
+    el.textContent = '💾 保存中…';
+    el.style.color = '#ffd740';
+  }
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0.3'; }, 2000);
+}
+
+// Auto-save timer
+setInterval(() => {
+  if (_gameStarted && !G.paused) saveGame(false);
+}, SAVE_INTERVAL);
+
+// Save on page close/refresh
+window.addEventListener('beforeunload', () => {
+  if (_gameStarted) {
+    const state = collectSaveState();
+    navigator.sendBeacon('/api/game/save', new Blob([JSON.stringify(state)], { type: 'application/json' }));
+  }
+});
+
+// =====================================================
+// START
+// =====================================================
+startLoad();
+</script>
+</body>
+</html>

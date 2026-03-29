@@ -1,0 +1,22 @@
+{
+  "id": "irrig",
+  "name": "灌溉工程",
+  "icon": "💧",
+  "dept": "种植部",
+  "tier": 3,
+  "sprite": "irrig",
+  "zone": "pond",
+  "color": "#00e676",
+  "skills": [
+    "irrigation-plan",
+    "resource-check"
+  ],
+  "description": "农田灌溉系统规划和维护",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-irrig.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.397Z",
+  "updatedAt": "2026-03-27T17:18:42.165Z"
+}

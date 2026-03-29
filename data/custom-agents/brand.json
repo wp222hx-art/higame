@@ -1,0 +1,23 @@
+{
+  "id": "brand",
+  "name": "品牌部长",
+  "icon": "🎨",
+  "dept": "品牌部",
+  "tier": 2,
+  "sprite": "brand",
+  "zone": "livestream",
+  "color": "#f48fb1",
+  "skills": [
+    "brand-build",
+    "livestream-plan",
+    "launch-product"
+  ],
+  "description": "品牌形象建设和推广",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-brand.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 2.2,
+  "createdAt": "2026-03-27T17:13:17.399Z",
+  "updatedAt": "2026-03-27T17:42:20.385Z"
+}

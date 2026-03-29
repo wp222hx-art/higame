@@ -1,0 +1,23 @@
+{
+  "id": "harvest",
+  "name": "采收专家",
+  "icon": "🌾",
+  "dept": "种植部",
+  "tier": 3,
+  "sprite": "harvest",
+  "zone": "fields-a",
+  "color": "#00e676",
+  "skills": [
+    "harvest-schedule",
+    "team-harvest",
+    "quality-check"
+  ],
+  "description": "最佳采收时机判断和组织采收",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-harvest.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.398Z",
+  "updatedAt": "2026-03-27T17:16:42.072Z"
+}

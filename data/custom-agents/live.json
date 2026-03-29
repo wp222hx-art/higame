@@ -1,0 +1,22 @@
+{
+  "id": "live",
+  "name": "直播销售",
+  "icon": "🎬",
+  "dept": "销售部",
+  "tier": 3,
+  "sprite": "live",
+  "zone": "livestream",
+  "color": "#ff9100",
+  "skills": [
+    "livestream-plan",
+    "brand-build"
+  ],
+  "description": "直播带货策划和执行",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-live.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.398Z",
+  "updatedAt": "2026-03-27T17:37:05.384Z"
+}

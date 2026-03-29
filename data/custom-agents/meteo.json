@@ -1,0 +1,22 @@
+{
+  "id": "meteo",
+  "name": "气象师",
+  "icon": "🌤️",
+  "dept": "种植部",
+  "tier": 3,
+  "sprite": "meteo",
+  "zone": "weather",
+  "color": "#00e676",
+  "skills": [
+    "weather-alert",
+    "irrigation-plan"
+  ],
+  "description": "气象数据分析，提供天气预警",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-meteo.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.397Z",
+  "updatedAt": "2026-03-27T17:23:06.864Z"
+}

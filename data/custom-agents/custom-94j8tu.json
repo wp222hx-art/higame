@@ -1,0 +1,21 @@
+{
+  "id": "custom-94j8tu",
+  "name": "销售张经理",
+  "icon": "🌾",
+  "dept": "销售部",
+  "tier": 3,
+  "zone": "greenhouse",
+  "color": "#00e676",
+  "skills": [
+    "crop-plan",
+    "soil-analysis",
+    "market-analysis"
+  ],
+  "description": "",
+  "sprite": "custom-94j8tu",
+  "scale": 0.5,
+  "frameSize": 298,
+  "frameHeight": 300,
+  "spriteUrl": "/game/assets/sprites/custom/char-custom-94j8tu.png",
+  "createdAt": "2026-03-27T16:37:20.493Z"
+}

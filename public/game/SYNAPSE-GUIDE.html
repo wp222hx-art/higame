@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SYNAPSE-beta — 项目说明文档</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#060a14;--bg2:#0a1020;--card:#0d1428;--border:rgba(0,230,118,.08);--green:#00e676;--green2:#69f0ae;--gold:#ffd740;--text:#c8d0dc;--text2:#7a8898;--text3:#3a4a5e}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.8;padding:0 0 80px}
+
+/* Header */
+.hero{background:linear-gradient(135deg,var(--bg),var(--bg2),#080818);border-bottom:1px solid var(--border);padding:60px 0 40px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 80%,rgba(0,230,118,.03),transparent 70%)}
+.hero h1{font-size:clamp(32px,6vw,56px);font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,#00e676,#69f0ae,#00bcd4,#b2ff59);background-size:200% 200%;animation:gshift 4s ease infinite;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+@keyframes gshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero .sub{color:var(--text2);font-size:14px;letter-spacing:6px;margin-bottom:20px}
+.hero .ver{display:inline-block;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.12);color:var(--green);font-size:11px;padding:3px 12px;border-radius:20px;font-weight:800;letter-spacing:1px}
+.hero .status-row{display:flex;gap:16px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.hero .status{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+.hero .status .dot{width:8px;height:8px;border-radius:50%}
+
+/* Nav */
+.nav{position:sticky;top:0;z-index:100;background:rgba(6,10,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:8px 0;display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
+.nav a{color:var(--text2);text-decoration:none;font-size:11px;font-weight:700;padding:5px 14px;border-radius:6px;transition:.15s;border:1px solid transparent}
+.nav a:hover{color:var(--green);background:rgba(0,230,118,.04);border-color:rgba(0,230,118,.1)}
+
+/* Container */
+.container{max-width:960px;margin:0 auto;padding:0 20px}
+
+/* Section */
+.section{margin-top:48px}
+.section-title{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.section-title h2{font-size:20px;font-weight:900;color:#fff}
+.section-title .badge{font-size:10px;background:rgba(0,230,118,.06);color:var(--green);padding:3px 10px;border-radius:10px;font-weight:800;border:1px solid rgba(0,230,118,.1)}
+
+/* Progress overview */
+.progress-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px}
+.prog-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.prog-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--green))}
+.prog-card .label{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.prog-card .value{font-size:24px;font-weight:900;color:#fff;margin:4px 0 2px}
+.prog-card .desc{font-size:10px;color:var(--text2)}
+.prog-card .bar{height:4px;background:rgba(255,255,255,.03);border-radius:2px;margin-top:8px;overflow:hidden}
+.prog-card .bar-fill{height:100%;border-radius:2px;transition:width .5s}
+
+/* Org chart */
+.org-tree{display:flex;flex-direction:column;gap:6px}
+.org-tier{display:flex;flex-direction:column;gap:3px}
+.org-tier-label{font-size:10px;font-weight:800;padding:4px 10px;border-radius:5px;display:inline-flex;align-items:center;gap:5px;width:fit-content;margin-bottom:4px}
+.dept-group{margin-left:16px;margin-bottom:12px}
+.dept-label{font-size:11px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;border-left:3px solid}
+
+/* Agent card */
+.agent-card{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:3px 0 3px 20px;transition:.2s;position:relative;overflow:hidden}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--dc,rgba(0,230,118,.15)),transparent);opacity:0;transition:.2s}
+.agent-card:hover{border-color:rgba(0,230,118,.15)}.agent-card:hover::before{opacity:1}
+.agent-icon{font-size:22px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(0,230,118,.03);border-radius:8px;flex-shrink:0}
+.agent-info{flex:1;min-width:0}
+.agent-name{font-size:13px;font-weight:800;color:#fff}
+.agent-role{font-size:9px;color:var(--text3);margin-top:1px}
+.agent-desc{font-size:10px;color:var(--text2);margin-top:2px;line-height:1.5}
+.agent-meta{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.agent-tag{font-size:8px;padding:2px 6px;border-radius:3px;font-weight:700;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);color:var(--text2)}
+.agent-tag.zone{background:rgba(0,230,118,.04);border-color:rgba(0,230,118,.08);color:var(--green)}
+.agent-tag.sprite{background:rgba(255,215,0,.04);border-color:rgba(255,215,0,.08);color:var(--gold)}
+
+/* Building / Crop / Terrain cards */
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.item-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;transition:.15s}
+.item-card:hover{border-color:rgba(0,230,118,.15)}
+.item-card .row{display:flex;align-items:center;gap:8px}
+.item-card .ic{font-size:20px}
+.item-card .nm{font-size:12px;font-weight:800;color:#fff}
+.item-card .sub{font-size:9px;color:var(--text3)}
+.item-card .detail{font-size:10px;color:var(--text2);margin-top:5px;line-height:1.6}
+.item-card .stat-row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.item-card .stat{font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);color:var(--text2)}
+
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.data-table th{text-align:left;color:var(--text3);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--border);background:rgba(0,230,118,.01)}
+.data-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.015);color:var(--text2)}
+.data-table tr:hover td{background:rgba(0,230,118,.02)}
+.data-table .em{font-size:14px}
+
+/* Command list */
+.cmd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px}
+.cmd-card{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 10px;transition:.15s}
+.cmd-card:hover{border-color:rgba(0,230,118,.12)}
+.cmd-card .ci{font-size:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.01);border-radius:6px}
+.cmd-card .cn{font-size:11px;font-weight:800;color:var(--green);font-family:monospace}
+.cmd-card .cd{font-size:9px;color:var(--text2)}
+.cmd-card .cc{font-size:8px;padding:2px 6px;border-radius:3px;margin-left:auto;font-weight:700;flex-shrink:0}
+
+/* Key controls */
+.key-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}
+.key-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px}
+.key{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:24px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:4px;font-size:10px;font-weight:800;color:var(--text);padding:0 6px;font-family:monospace}
+.key-desc{font-size:10px;color:var(--text2)}
+
+/* Footer note */
+.footer-note{margin-top:48px;padding:16px;border-top:1px solid var(--border);text-align:center;font-size:10px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <h1>SYNAPSE-beta</h1>
+  <div class="sub">AI 智慧农村 · 模拟经营</div>
+  <span class="ver">v4.0 — Q-Version Visual Overhaul</span>
+  <div class="status-row">
+    <div class="status"><span class="dot" style="background:#00e676"></span> 游戏引擎 Canvas2D</div>
+    <div class="status"><span class="dot" style="background:#ffd740"></span> 22 位 AI 代理</div>
+    <div class="status"><span class="dot" style="background:#69f0ae"></span> 10 种作物</div>
+    <div class="status"><span class="dot" style="background:#42a5f5"></span> 9 座建筑</div>
+    <div class="status"><span class="dot" style="background:#f48fb1"></span> 12 块农田</div>
+  </div>
+</div>
+
+<!-- ===== NAV ===== -->
+<div class="nav">
+  <a href="#progress">项目进度</a>
+  <a href="#org">组织架构</a>
+  <a href="#agents">角色详情</a>
+  <a href="#sprites">角色外观</a>
+  <a href="#buildings">建筑设施</a>
+  <a href="#crops">作物体系</a>
+  <a href="#fields">农田分布</a>
+  <a href="#commands">指令系统</a>
+  <a href="#controls">操作说明</a>
+  <a href="#tech">技术规格</a>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 一、项目进度总览 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="progress">
+  <div class="section-title">
+    <h2>一、项目进度总览</h2>
+    <span class="badge">当前状态</span>
+  </div>
+
+  <div class="progress-grid">
+    <div class="prog-card" style="--accent:#00e676">
+      <div class="label">游戏引擎</div>
+      <div class="value">100%</div>
+      <div class="desc">Canvas2D 渲染、相机、输入处理</div>
+      <div class="bar"><div class="bar-fill" style="width:100%;background:#00e676"></div></div>
+    </div>
+    <div class="prog-card" style="--accent:#69f0ae">
+      <div class="label">美术资源 (v4)</div>
+      <div class="value">100%</div>
+      <div class="desc">Q版像素精灵 · 8角色/10作物/9建筑/6地形</div>
+      <div class="bar"><div class="bar-fill" style="width:100%;background:#69f0ae"></div></div>
+    </div>
+    <div class="prog-card" style="--accent:#ffd740">
+      <div class="label">渲染特效</div>
+      <div class="value">100%</div>
+      <div class="desc">阴影/光照/昼夜/天气/粒子/暗角</div>
+      <div class="bar"><div class="bar-fill" style="width:100%;background:#ffd740"></div></div>
+    </div>
+    <div class="prog-card" style="--accent:#42a5f5">
+      <div class="label">NPC 系统</div>
+      <div class="value">85%</div>
+      <div class="desc">22代理巡逻·状态管理·气泡对话</div>
+      <div class="bar"><div class="bar-fill" style="width:85%;background:#42a5f5"></div></div>
+    </div>
+    <div class="prog-card" style="--accent:#ff9100">
+      <div class="label">种植经营</div>
+      <div class="value">80%</div>
+      <div class="desc">10作物/12田地/生长周期/市场定价</div>
+      <div class="bar"><div class="bar-fill" style="width:80%;background:#ff9100"></div></div>
+    </div>
+    <div class="prog-card" style="--accent:#ef5350">
+      <div class="label">事件/剧情</div>
+      <div class="value">30%</div>
+      <div class="desc">病虫害事件·季节更替·随机任务</div>
+      <div class="bar"><div class="bar-fill" style="width:30%;background:#ef5350"></div></div>
+    </div>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:11px;color:var(--text2);line-height:1.8">
+    <strong style="color:#fff">已完成：</strong><br>
+    ✅ Canvas2D 游戏引擎（地图 24×18 格 = 1152×864 像素世界）<br>
+    ✅ Q版像素美术体系 v4.0（大头身比例、动漫眼睛、腮红、暗边描线）<br>
+    ✅ 渲染引擎大幅升级（地形边缘融合、建筑阴影、水面焦散、暗角特效）<br>
+    ✅ 8 类角色精灵（96×128 像素表，3帧×4方向步行动画）<br>
+    ✅ 10 种作物生长精灵（128×32，4 阶段：幼苗→生长→开花→成熟）<br>
+    ✅ 9 座建筑精灵（64×64，瓦片屋顶、窗户光照、烟囱烟雾）<br>
+    ✅ 6 种地形瓦片（48×48，草/土/水/稻田/石/沙）<br>
+    ✅ 22 位 AI 代理分区巡逻、状态管理<br>
+    ✅ 作物种植/收获交互、市场价格波动、财务跟踪<br>
+    ✅ 8 阶段昼夜循环 + 4 季粒子系统（樱花/蒲公英/落叶/雪花）<br>
+    ✅ 指令面板（12 条指令）、信息面板（代理/农田/市场/财务/日志）<br>
+    ✅ 天气系统（晴/多云/小雨/暴雨/大风/霜冻）<br>
+    ✅ SYNAPSE-beta 神经连线动画（工作代理间发光脉冲）<br>
+    <br>
+    <strong style="color:#fff">进行中 / 待开发：</strong><br>
+    🔧 更丰富的随机事件和剧情链（目前仅病虫害 1 种）<br>
+    🔧 代理间协作逻辑深化（跨部门联动任务）<br>
+    🔧 科技树 / 升级系统<br>
+    🔧 成就系统、多结局<br>
+    🔧 音效与背景音乐<br>
+    🔧 存档 / 读档功能<br>
+    🔧 移动端优化适配
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 二、组织架构 — 职能体系 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="org">
+  <div class="section-title">
+    <h2>二、组织架构 — 职能体系</h2>
+    <span class="badge">22 位 AI 代理 · 8 个部门 · 3 级梯队</span>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:16px">
+    SYNAPSE 村庄采用 <strong style="color:#fff">三级管理架构</strong>：<br>
+    <strong style="color:#ffd740">T1 领导层</strong>（3人）→ <strong style="color:#42a5f5">T2 部长级</strong>（8人）→ <strong style="color:#69f0ae">T3 专家级</strong>（11人）<br><br>
+    玩家作为<strong style="color:#fff">村庄总指挥</strong>，通过指令面板调度所有代理。每位代理驻守在对应建筑区域巡逻，接到指令后进入"工作"状态，附近工作的代理之间会产生 SYNAPSE-beta 神经连线动画，象征 AI 协同。
+  </div>
+
+  <div class="org-tree">
+
+    <!-- T1 领导层 -->
+    <div class="org-tier">
+      <div class="org-tier-label" style="background:rgba(255,215,0,.06);color:#ffd740;border:1px solid rgba(255,215,0,.12)">
+        <span style="width:8px;height:8px;border-radius:50%;background:#ffd740;display:inline-block"></span>
+        T1 · 领导层（3人）
+      </div>
+      <div class="dept-group">
+        <div class="agent-card" style="--dc:rgba(255,215,0,.3)">
+          <div class="agent-icon">🏛️</div>
+          <div class="agent-info">
+            <div class="agent-name">村长</div>
+            <div class="agent-role">ID: chief · T1 领导层</div>
+            <div class="agent-desc">全村最高管理者，负责统筹决策、接待来访、发布重大方针。驻地：村委会。</div>
+            <div class="agent-meta">
+              <span class="agent-tag zone">📍 村委会</span>
+              <span class="agent-tag sprite">🎨 chief（红衣金边·官帽）</span>
+            </div>
+          </div>
+        </div>
+        <div class="agent-card" style="--dc:rgba(255,215,0,.3)">
+          <div class="agent-icon">🔬</div>
+          <div class="agent-info">
+            <div class="agent-name">农技总监</div>
+            <div class="agent-role">ID: agritech · T1 领导层</div>
+            <div class="agent-desc">技术线总负责人，领导种植部所有专家，把控农业科技方向。驻地：质检中心。</div>
+            <div class="agent-meta">
+              <span class="agent-tag zone">📍 质检中心</span>
+              <span class="agent-tag sprite">🎨 tech（蓝衣·眼镜）</span>
+            </div>
+          </div>
+        </div>
+        <div class="agent-card" style="--dc:rgba(255,215,0,.3)">
+          <div class="agent-icon">📊</div>
+          <div class="agent-info">
+            <div class="agent-name">运营总监</div>
+            <div class="agent-role">ID: ops · T1 领导层</div>
+            <div class="agent-desc">负责村庄日常运营、资源调度、预算审批。驻地：村委会。</div>
+            <div class="agent-meta">
+              <span class="agent-tag zone">📍 村委会</span>
+              <span class="agent-tag sprite">🎨 finance（紫衣）</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- T2 部长级 -->
+    <div class="org-tier">
+      <div class="org-tier-label" style="background:rgba(66,165,245,.06);color:#42a5f5;border:1px solid rgba(66,165,245,.12)">
+        <span style="width:8px;height:8px;border-radius:50%;background:#42a5f5;display:inline-block"></span>
+        T2 · 部长级（8人）— 各部门负责人
+      </div>
+
+      <!-- 种植部 -->
+      <div class="dept-group">
+        <div class="dept-label" style="color:#00e676;border-color:#00e676;background:rgba(0,230,118,.03)">🌱 种植部（1部长 + 7专家）</div>
+        <div class="agent-card" style="--dc:rgba(0,230,118,.3)">
+          <div class="agent-icon">🌱</div>
+          <div class="agent-info">
+            <div class="agent-name">种植部长</div>
+            <div class="agent-role">ID: plant-dir · T2 种植部</div>
+            <div class="agent-desc">管理全部农田作业，制定种植计划，指挥 7 名种植专家。每次执行 /crop-plan 指令会被激活。</div>
+            <div class="agent-meta">
+              <span class="agent-tag zone">📍 水田区A</span>
+              <span class="agent-tag sprite">🎨 farmer（绿衣·草帽·女性）</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 销售部 -->
+      <div class="dept-group">
+        <div class="dept-label" style="color:#ff9100;border-color:#ff9100;background:rgba(255,145,0,.03)">📦 销售部（1部长 + 5专家）</div>
+        <div class="agent-card" style="--dc:rgba(255,145,0,.3)">
+          <div class="agent-icon">📦</div>
+          <div class="agent-info">
+            <div class="agent-name">销售部长</div>
+            <div class="agent-role">ID: sales-dir · T2 销售部</div>
+            <div class="agent-desc">统管市场交易、电商直播、批发零售、物流配送，是农产品变现核心。</div>
+            <div class="agent-meta">
+              <span class="agent-tag zone">📍 市场</span>
+              <span class="agent-tag sprite">🎨 sales（橙衣）</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 品牌/质检/财务/后勤/生态 -->
+      <div class="dept-group">
+        <div class="dept-label" style="color:#f48fb1;border-color:#f48fb1;background:rgba(244,143,177,.03)">🎨 品牌部</div>
+        <div class="agent-card">
+          <div class="agent-icon">🎨</div>
+          <div class="agent-info">
+            <div class="agent-name">品牌部长</div>
+            <div class="agent-role">ID: brand · T2 品牌部</div>
+            <div class="agent-desc">负责品牌策划、对外宣传、口碑管理。执行 /brand-build 可声誉+5。</div>
+            <div class="agent-meta"><span class="agent-tag zone">📍 直播间</span><span class="agent-tag sprite">🎨 livestream（粉衣·女性）</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="dept-group">
+        <div class="dept-label" style="color:#ef5350;border-color:#ef5350;background:rgba(239,83,80,.03)">🔍 质检部</div>
+        <div class="agent-card">
+          <div class="agent-icon">🔍</div>
+          <div class="agent-info">
+            <div class="agent-name">质检部长</div>
+            <div class="agent-role">ID: qual · T2 质检部</div>
+            <div class="agent-desc">产品质量把关，负责出厂前全面检验。执行 /quality-check 可声誉+1。</div>
+            <div class="agent-meta"><span class="agent-tag zone">📍 质检中心</span><span class="agent-tag sprite">🎨 inspector（白衣·眼镜）</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="dept-group">
+        <div class="dept-label" style="color:#42a5f5;border-color:#42a5f5;background:rgba(66,165,245,.03)">💰 财务部</div>
+        <div class="agent-card">
+          <div class="agent-icon">💰</div>
+          <div class="agent-info">
+            <div class="agent-name">财务部长</div>
+            <div class="agent-role">ID: fin · T2 财务部</div>
+            <div class="agent-desc">管理村庄财务，审核收支，编制预算报表。执行 /budget-review 时被激活。</div>
+            <div class="agent-meta"><span class="agent-tag zone">📍 村委会</span><span class="agent-tag sprite">🎨 finance（紫衣）</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="dept-group">
+        <div class="dept-label" style="color:#00bcd4;border-color:#00bcd4;background:rgba(0,188,212,.03)">🏗️ 后勤部</div>
+        <div class="agent-card">
+          <div class="agent-icon">🏗️</div>
+          <div class="agent-info">
+            <div class="agent-name">后勤部长</div>
+            <div class="agent-role">ID: rear · T2 后勤部</div>
+            <div class="agent-desc">负责仓储物资管理、设备维护、基础设施运转。</div>
+            <div class="agent-meta"><span class="agent-tag zone">📍 仓库</span><span class="agent-tag sprite">🎨 delivery（青衣·鸭舌帽）</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="dept-group">
+        <div class="dept-label" style="color:#69f0ae;border-color:#69f0ae;background:rgba(105,240,174,.03)">🌿 生态部</div>
+        <div class="agent-card">
+          <div class="agent-icon">🌿</div>
+          <div class="agent-info">
+            <div class="agent-name">生态部长</div>
+            <div class="agent-role">ID: eco · T2 生态部</div>
+            <div class="agent-desc">监测生态平衡，管理水域和绿化。执行 /training-plan 时被激活，新村民+1。</div>
+            <div class="agent-meta"><span class="agent-tag zone">📍 池塘</span><span class="agent-tag sprite">🎨 farmer（绿衣·草帽·女性）</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- T3 专家级 -->
+    <div class="org-tier">
+      <div class="org-tier-label" style="background:rgba(105,240,174,.06);color:#69f0ae;border:1px solid rgba(105,240,174,.12)">
+        <span style="width:8px;height:8px;border-radius:50%;background:#69f0ae;display:inline-block"></span>
+        T3 · 专家级（11人）— 各领域专业人才
+      </div>
+
+      <!-- 种植部专家 -->
+      <div class="dept-group">
+        <div class="dept-label" style="color:#00e676;border-color:#00e676;background:rgba(0,230,118,.03)">🌱 种植部 · 专家团</div>
+        <div class="agent-card"><div class="agent-icon">🧪</div><div class="agent-info"><div class="agent-name">土壤专家</div><div class="agent-role">ID: soil · T3</div><div class="agent-desc">检测土壤pH值、有机质含量、微量元素，为施肥提供科学方案。</div><div class="agent-meta"><span class="agent-tag zone">📍 水田区A</span><span class="agent-tag sprite">🎨 inspector</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🌤️</div><div class="agent-info"><div class="agent-name">气象师</div><div class="agent-role">ID: meteo · T3</div><div class="agent-desc">监测天气变化，发布暴雨/霜冻预警。天气变化时自动激活。</div><div class="agent-meta"><span class="agent-tag zone">📍 气象站</span><span class="agent-tag sprite">🎨 tech</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🌾</div><div class="agent-info"><div class="agent-name">种子专家</div><div class="agent-role">ID: seed · T3</div><div class="agent-desc">负责选种、育种，维护种子库，推荐适合当季的品种。</div><div class="agent-meta"><span class="agent-tag zone">📍 旱地区B</span><span class="agent-tag sprite">🎨 farmer</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">💧</div><div class="agent-info"><div class="agent-name">灌溉工程</div><div class="agent-role">ID: irrig · T3</div><div class="agent-desc">设计和维护灌溉系统，确保水资源高效利用。</div><div class="agent-meta"><span class="agent-tag zone">📍 池塘</span><span class="agent-tag sprite">🎨 delivery</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🐛</div><div class="agent-info"><div class="agent-name">病虫害专家</div><div class="agent-role">ID: pest · T3</div><div class="agent-desc">监测病虫害风险，发生虫害事件时第一响应人。</div><div class="agent-meta"><span class="agent-tag zone">📍 温室大棚</span><span class="agent-tag sprite">🎨 inspector</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🚜</div><div class="agent-info"><div class="agent-name">农机专家</div><div class="agent-role">ID: mach · T3</div><div class="agent-desc">管理农业机械设备，提升耕作效率。</div><div class="agent-meta"><span class="agent-tag zone">📍 旱地区B</span><span class="agent-tag sprite">🎨 delivery</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🌾</div><div class="agent-info"><div class="agent-name">采收专家</div><div class="agent-role">ID: harvest · T3</div><div class="agent-desc">负责作物采收时机判断和操作。作物成熟时自动激活。</div><div class="agent-meta"><span class="agent-tag zone">📍 水田区A</span><span class="agent-tag sprite">🎨 farmer</span></div></div></div>
+      </div>
+
+      <!-- 销售部专家 -->
+      <div class="dept-group">
+        <div class="dept-label" style="color:#ff9100;border-color:#ff9100;background:rgba(255,145,0,.03)">📦 销售部 · 专家团</div>
+        <div class="agent-card"><div class="agent-icon">📱</div><div class="agent-info"><div class="agent-name">电商运营</div><div class="agent-role">ID: ecom · T3</div><div class="agent-desc">运营线上商城、管理电商平台订单和评价体系。</div><div class="agent-meta"><span class="agent-tag zone">📍 直播间</span><span class="agent-tag sprite">🎨 livestream</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🎬</div><div class="agent-info"><div class="agent-name">直播销售</div><div class="agent-role">ID: live · T3</div><div class="agent-desc">直播带货核心执行者。/livestream-plan 可带来 ¥2000-7000 收入。</div><div class="agent-meta"><span class="agent-tag zone">📍 直播间</span><span class="agent-tag sprite">🎨 livestream</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">💹</div><div class="agent-info"><div class="agent-name">定价分析</div><div class="agent-role">ID: price · T3</div><div class="agent-desc">分析市场供需数据，制定最优定价策略。每周市场波动时自动激活。</div><div class="agent-meta"><span class="agent-tag zone">📍 市场</span><span class="agent-tag sprite">🎨 finance</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🏪</div><div class="agent-info"><div class="agent-name">批发专家</div><div class="agent-role">ID: whole · T3</div><div class="agent-desc">对接批发商渠道，处理大宗交易订单。</div><div class="agent-meta"><span class="agent-tag zone">📍 仓库</span><span class="agent-tag sprite">🎨 sales</span></div></div></div>
+        <div class="agent-card"><div class="agent-icon">🚛</div><div class="agent-info"><div class="agent-name">物流专家</div><div class="agent-role">ID: logi · T3</div><div class="agent-desc">管理运输调度，确保农产品新鲜送达。</div><div class="agent-meta"><span class="agent-tag zone">📍 物流中心</span><span class="agent-tag sprite">🎨 delivery</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 三、角色外观 — 精灵规格 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="sprites">
+  <div class="section-title">
+    <h2>三、角色外观 — 精灵规格</h2>
+    <span class="badge">8 套精灵 · Q版像素风</span>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:12px">
+    所有角色精灵尺寸为 <strong style="color:#fff">96×128 像素</strong>（3列×4行 = 12帧），每帧 32×32 像素。<br>
+    <strong style="color:#fff">列</strong>：静止帧 / 步行A帧 / 步行B帧<br>
+    <strong style="color:#fff">行</strong>：朝下 / 朝左 / 朝上 / 朝右<br>
+    渲染时以 <strong style="color:var(--green)">2.2× 缩放</strong>显示，加上弹跳动画和椭圆投影阴影。
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>精灵 ID</th><th>中文名</th><th>服装</th><th>发型</th><th>头饰</th><th>性别</th><th>特征</th><th>使用者</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>chief</strong></td><td>村长款</td><td>红衣金边</td><td>黑发</td><td>官帽</td><td>男</td><td>金色纽扣线</td><td>村长 ×1</td></tr>
+      <tr><td><strong>farmer</strong></td><td>农民款</td><td>绿衣棕裤</td><td>棕发长发</td><td>草帽</td><td>女</td><td>宽帽檐红丝带</td><td>种植部长、种子/采收专家、生态部长 ×4</td></tr>
+      <tr><td><strong>tech</strong></td><td>技术款</td><td>蓝衣白边</td><td>黑发</td><td>无</td><td>男</td><td>眼镜</td><td>农技总监、气象师 ×2</td></tr>
+      <tr><td><strong>sales</strong></td><td>销售款</td><td>橙衣深裤</td><td>棕发</td><td>无</td><td>男</td><td>—</td><td>销售部长、批发专家 ×2</td></tr>
+      <tr><td><strong>delivery</strong></td><td>配送款</td><td>青衣灰裤</td><td>黑发</td><td>鸭舌帽</td><td>男</td><td>帽檐朝向随方向</td><td>灌溉/农机/物流/后勤 ×4</td></tr>
+      <tr><td><strong>livestream</strong></td><td>主播款</td><td>粉衣淡粉边</td><td>黑发长发</td><td>无</td><td>女</td><td>裙摆感</td><td>电商/直播/品牌 ×3</td></tr>
+      <tr><td><strong>inspector</strong></td><td>检验款</td><td>白衣灰边</td><td>灰发</td><td>无</td><td>男</td><td>眼镜</td><td>土壤/病虫害/质检 ×3</td></tr>
+      <tr><td><strong>finance</strong></td><td>财务款</td><td>紫衣淡紫边</td><td>黑发</td><td>无</td><td>男</td><td>—</td><td>运营总监、定价/财务 ×3</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 四、建筑设施 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="buildings">
+  <div class="section-title">
+    <h2>四、建筑设施</h2>
+    <span class="badge">9 座建筑</span>
+  </div>
+  <div class="item-grid">
+    <div class="item-card"><div class="row"><span class="ic">🏛️</span><div><div class="nm">村委会</div><div class="sub">village-hall · 坐标(1.5, 1.2)</div></div></div><div class="detail">村庄行政中心，村长/运营总监/财务部长驻地。带国旗、烟囱。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">🏪</span><div><div class="nm">市场</div><div class="sub">market · 坐标(13.5, 1.2)</div></div></div><div class="detail">农产品交易场所，销售部长/定价分析师驻地。带招牌。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">📦</span><div><div class="nm">仓库</div><div class="sub">warehouse · 坐标(17.5, 1.2)</div></div></div><div class="detail">储存收获物资，批发专家/后勤部长驻地。带货箱。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">🌿</span><div><div class="nm">温室大棚</div><div class="sub">greenhouse · 坐标(4.5, 12.2)</div></div></div><div class="detail">玻璃屋顶可加速作物生长 +30%。病虫害专家驻地。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">🌤️</span><div><div class="nm">气象站</div><div class="sub">weather-station · 坐标(1.2, 5.2)</div></div></div><div class="detail">天气监测设施，气象师驻地。金属屋顶带天线红灯。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">🔬</span><div><div class="nm">质检中心</div><div class="sub">lab · 坐标(1.2, 8.2)</div></div></div><div class="detail">农产品检验实验室，农技总监/质检部长驻地。带烧瓶、烟囱。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">📚</span><div><div class="nm">培训中心</div><div class="sub">training · 坐标(1.2, 11.2)</div></div></div><div class="detail">村民技能培训场所。红瓦屋顶，带书本图标、烟囱。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">🚛</span><div><div class="nm">物流中心</div><div class="sub">logistics · 坐标(17.5, 5.2)</div></div></div><div class="detail">运输调度中心，物流专家驻地。橙色屋顶，带小货车。</div></div>
+    <div class="item-card"><div class="row"><span class="ic">🎬</span><div><div class="nm">直播间</div><div class="sub">livestream · 坐标(13.5, 5.2)</div></div></div><div class="detail">直播带货工作室，电商/直播/品牌团队驻地。粉色屋顶带天线。</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 五、作物体系 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="crops">
+  <div class="section-title">
+    <h2>五、作物体系</h2>
+    <span class="badge">10 种作物 · 4 阶段生长</span>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th></th><th>作物</th><th>分类</th><th>适种季节</th><th>生长天数</th><th>种植成本</th><th>产量(斤)</th><th>基准价(¥/斤)</th><th>预估收入</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="em">🌾</td><td><strong>水稻</strong></td><td>粮食</td><td>春·夏</td><td>90</td><td>¥200</td><td>800</td><td>3.0</td><td>¥2,400</td></tr>
+      <tr><td class="em">🌿</td><td><strong>小麦</strong></td><td>粮食</td><td>秋·冬</td><td>75</td><td>¥150</td><td>600</td><td>2.5</td><td>¥1,500</td></tr>
+      <tr><td class="em">🌽</td><td><strong>玉米</strong></td><td>粮食</td><td>春·夏</td><td>70</td><td>¥120</td><td>650</td><td>2.2</td><td>¥1,430</td></tr>
+      <tr><td class="em">🍅</td><td><strong>番茄</strong></td><td>蔬菜</td><td>春·夏</td><td>60</td><td>¥180</td><td>500</td><td>4.0</td><td>¥2,000</td></tr>
+      <tr><td class="em">🥬</td><td><strong>白菜</strong></td><td>蔬菜</td><td>秋·冬·春</td><td>45</td><td>¥100</td><td>700</td><td>2.0</td><td>¥1,400</td></tr>
+      <tr><td class="em">🌶️</td><td><strong>辣椒</strong></td><td>蔬菜</td><td>春·夏</td><td>55</td><td>¥160</td><td>400</td><td>5.0</td><td>¥2,000</td></tr>
+      <tr><td class="em">🪷</td><td><strong>莲藕</strong></td><td>蔬菜</td><td>春·夏</td><td>100</td><td>¥250</td><td>500</td><td>8.0</td><td>¥4,000</td></tr>
+      <tr><td class="em">🍵</td><td><strong>茶叶</strong></td><td>蔬菜</td><td>春·夏·秋</td><td>80</td><td>¥500</td><td>200</td><td>30.0</td><td style="color:#ffd740"><strong>¥6,000</strong></td></tr>
+      <tr><td class="em">🍓</td><td><strong>草莓</strong></td><td>水果</td><td>冬·春</td><td>50</td><td>¥400</td><td>300</td><td>20.0</td><td style="color:#ffd740"><strong>¥6,000</strong></td></tr>
+      <tr><td class="em">🍊</td><td><strong>柑橘</strong></td><td>水果</td><td>秋</td><td>120</td><td>¥300</td><td>1000</td><td>6.0</td><td style="color:#ffd740"><strong>¥6,000</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:10px;color:var(--text2);margin-top:10px;line-height:1.7">
+    <strong style="color:#fff">生长机制：</strong>
+    温室大棚加速 +30% · 晴天/多云额外 +10% · 暴雨减速 -20%<br>
+    <strong style="color:#fff">市场波动：</strong>每 7 天价格随机浮动 ±25%，需求量变化 ±10<br>
+    <strong style="color:#fff">收获公式：</strong>产量 × 肥力% × 当前市价 = 实际收入<br>
+    <strong style="color:#ffd740">利润之王：</strong>茶叶（利润率 1100%）、草莓（利润率 1400%）、柑橘（利润率 1900%）
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 六、农田分布 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="fields">
+  <div class="section-title">
+    <h2>六、农田分布</h2>
+    <span class="badge">12 块田地 · 5 种类型</span>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>#</th><th>田地名</th><th>类型</th><th>坐标(格)</th><th>尺寸</th><th>特殊效果</th><th>适合作物</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>水田A</td><td>🌊 水田</td><td>(4, 2)</td><td>3×1.5</td><td>—</td><td>水稻</td></tr>
+      <tr><td>1</td><td>水田B</td><td>🌊 水田</td><td>(7, 2)</td><td>3×1.5</td><td>—</td><td>水稻</td></tr>
+      <tr><td>2</td><td>水田C</td><td>🌊 水田</td><td>(4, 3.5)</td><td>3×1.5</td><td>—</td><td>水稻</td></tr>
+      <tr><td>3</td><td>旱地A</td><td>🟤 旱地</td><td>(4, 7)</td><td>3×2</td><td>—</td><td>番茄/白菜/辣椒/玉米</td></tr>
+      <tr><td>4</td><td>旱地B</td><td>🟤 旱地</td><td>(7, 7)</td><td>3×2</td><td>—</td><td>番茄/白菜/辣椒/玉米</td></tr>
+      <tr><td>5</td><td>旱地C</td><td>🟤 旱地</td><td>(4, 9)</td><td>3×2</td><td>—</td><td>番茄/白菜/辣椒/玉米</td></tr>
+      <tr><td>6</td><td>旱地D</td><td>🟤 旱地</td><td>(7, 9)</td><td>3×2</td><td>—</td><td>番茄/白菜/辣椒/玉米</td></tr>
+      <tr><td>7</td><td>大棚A</td><td>🏠 温室</td><td>(4, 12)</td><td>2×1.5</td><td style="color:#00e676">生长速度 +30%</td><td>草莓/茶叶/蔬菜</td></tr>
+      <tr><td>8</td><td>大棚B</td><td>🏠 温室</td><td>(6, 12)</td><td>2×1.5</td><td style="color:#00e676">生长速度 +30%</td><td>草莓/茶叶/蔬菜</td></tr>
+      <tr><td>9</td><td>果园</td><td>🌳 果园</td><td>(13, 8)</td><td>4×3</td><td>—</td><td>柑橘/草莓</td></tr>
+      <tr><td>10</td><td>茶园</td><td>🍵 果园</td><td>(17, 9)</td><td>3×3</td><td>—</td><td>茶叶</td></tr>
+      <tr><td>11</td><td>莲塘</td><td>💧 水塘</td><td>(9, 12)</td><td>3×3</td><td>—</td><td>莲藕</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 七、指令系统 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="commands">
+  <div class="section-title">
+    <h2>七、指令系统</h2>
+    <span class="badge">12 条指令 · 按 Space 呼出</span>
+  </div>
+
+  <div class="cmd-grid">
+    <div class="cmd-card"><span class="ci">📋</span><div><div class="cn">/crop-plan</div><div class="cd">制定年度种植计划</div></div><span class="cc" style="background:rgba(0,230,118,.06);color:#00e676">种植</span></div>
+    <div class="cmd-card"><span class="ci">🧪</span><div><div class="cn">/soil-analysis</div><div class="cd">检测土壤质量与肥力</div></div><span class="cc" style="background:rgba(0,230,118,.06);color:#00e676">种植</span></div>
+    <div class="cmd-card"><span class="ci">🐛</span><div><div class="cn">/pest-alert</div><div class="cd">监测病虫害风险</div></div><span class="cc" style="background:rgba(0,230,118,.06);color:#00e676">种植</span></div>
+    <div class="cmd-card"><span class="ci">📅</span><div><div class="cn">/harvest-schedule</div><div class="cd">安排最佳采收时间</div></div><span class="cc" style="background:rgba(0,230,118,.06);color:#00e676">种植</span></div>
+    <div class="cmd-card"><span class="ci">📊</span><div><div class="cn">/market-analysis</div><div class="cd">分析行情趋势</div></div><span class="cc" style="background:rgba(255,145,0,.06);color:#ff9100">销售</span></div>
+    <div class="cmd-card"><span class="ci">💰</span><div><div class="cn">/pricing-strategy</div><div class="cd">制定智能定价方案</div></div><span class="cc" style="background:rgba(255,145,0,.06);color:#ff9100">销售</span></div>
+    <div class="cmd-card"><span class="ci">🎬</span><div><div class="cn">/livestream-plan</div><div class="cd">策划直播带货活动</div></div><span class="cc" style="background:rgba(255,145,0,.06);color:#ff9100">销售</span></div>
+    <div class="cmd-card"><span class="ci">🏷️</span><div><div class="cn">/brand-build</div><div class="cd">提升品牌知名度</div></div><span class="cc" style="background:rgba(255,145,0,.06);color:#ff9100">销售</span></div>
+    <div class="cmd-card"><span class="ci">💳</span><div><div class="cn">/budget-review</div><div class="cd">审核预算执行情况</div></div><span class="cc" style="background:rgba(66,165,245,.06);color:#42a5f5">运营</span></div>
+    <div class="cmd-card"><span class="ci">⛈️</span><div><div class="cn">/weather-alert</div><div class="cd">天气预警与防灾</div></div><span class="cc" style="background:rgba(66,165,245,.06);color:#42a5f5">运营</span></div>
+    <div class="cmd-card"><span class="ci">✅</span><div><div class="cn">/quality-check</div><div class="cd">产品质量检验</div></div><span class="cc" style="background:rgba(206,147,216,.06);color:#ce93d8">质量</span></div>
+    <div class="cmd-card"><span class="ci">📚</span><div><div class="cn">/training-plan</div><div class="cd">村民技能培训</div></div><span class="cc" style="background:rgba(66,165,245,.06);color:#42a5f5">运营</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 八、操作说明 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="controls">
+  <div class="section-title">
+    <h2>八、操作说明</h2>
+    <span class="badge">键鼠 + 触屏</span>
+  </div>
+  <div class="key-grid">
+    <div class="key-item"><span class="key">🖱️ 点击</span><span class="key-desc">点击田地 → 种植/收获</span></div>
+    <div class="key-item"><span class="key">🖱️ 拖拽</span><span class="key-desc">拖拽画面 → 移动地图</span></div>
+    <div class="key-item"><span class="key">🔄 滚轮</span><span class="key-desc">缩放画面（0.6x ~ 4x）</span></div>
+    <div class="key-item"><span class="key">Space</span><span class="key-desc">打开指令面板</span></div>
+    <div class="key-item"><span class="key">Esc</span><span class="key-desc">关闭所有弹窗/面板</span></div>
+    <div class="key-item"><span class="key">1</span><span class="key-desc">代理团队面板</span></div>
+    <div class="key-item"><span class="key">2</span><span class="key-desc">农田管理面板</span></div>
+    <div class="key-item"><span class="key">3</span><span class="key-desc">市场交易面板</span></div>
+    <div class="key-item"><span class="key">4</span><span class="key-desc">财务总览面板</span></div>
+    <div class="key-item"><span class="key">5</span><span class="key-desc">事件日志面板</span></div>
+    <div class="key-item"><span class="key">⏸ ▶ ▶▶ ▶▶▶</span><span class="key-desc">游戏速度 0x/1x/2x/3x</span></div>
+    <div class="key-item"><span class="key">📱 双指</span><span class="key-desc">触屏缩放（捏合手势）</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 九、技术规格 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="tech">
+  <div class="section-title">
+    <h2>九、技术规格</h2>
+    <span class="badge">技术栈</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>项目</th><th>规格</th></tr></thead>
+    <tbody>
+      <tr><td>引擎</td><td>原生 Canvas2D（无框架依赖）</td></tr>
+      <tr><td>地图尺寸</td><td>24×18 格 = 1152×864 像素世界</td></tr>
+      <tr><td>瓦片大小</td><td>48×48 像素</td></tr>
+      <tr><td>角色精灵</td><td>96×128（32×32 帧 × 3列 × 4行）</td></tr>
+      <tr><td>作物精灵</td><td>128×32（32×32 帧 × 4阶段）</td></tr>
+      <tr><td>建筑精灵</td><td>64×64 像素</td></tr>
+      <tr><td>美术风格</td><td>Q版（chibi）像素画 · 暗边描线 · 3阶调色（高光/本色/暗面）</td></tr>
+      <tr><td>精灵生成</td><td>Python PIL 程序化生成（tools/generate_sprites_v4.py）</td></tr>
+      <tr><td>渲染特效</td><td>地形边缘融合 · 水面焦散 · 建筑阴影 · 夜间窗光 · 萤火虫 · 四季粒子 · 暗角</td></tr>
+      <tr><td>昼夜循环</td><td>8 阶段（深夜/黎明前/拂晓/清晨/白天/日落前/日落/黄昏→深夜）</td></tr>
+      <tr><td>后端</td><td>Node.js + Express</td></tr>
+      <tr><td>代码量</td><td>index.html ~1700 行 · generate_sprites_v4.py ~650 行</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<div class="footer-note">
+  SYNAPSE-beta v4.0 — AI 智慧农村模拟经营 · 项目说明文档<br>
+  游戏入口：<a href="/game/index.html" style="color:var(--green)">/game/index.html</a>
+</div>
+
+</div><!-- container -->
+</body>
+</html>

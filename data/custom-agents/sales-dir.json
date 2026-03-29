@@ -1,0 +1,24 @@
+{
+  "id": "sales-dir",
+  "name": "销售部长",
+  "icon": "📦",
+  "dept": "销售部",
+  "tier": 2,
+  "sprite": "sales-dir",
+  "zone": "market",
+  "color": "#ff9100",
+  "skills": [
+    "market-analysis",
+    "pricing-strategy",
+    "channel-plan",
+    "launch-product"
+  ],
+  "description": "销售部门负责人，统筹市场工作",
+  "builtin": false,
+  "spriteUrl": "/game/assets/sprites/custom/char-sales-dir.png",
+  "frameSize": 298,
+  "frameHeight": 300,
+  "scale": 0.5,
+  "createdAt": "2026-03-27T17:13:17.398Z",
+  "updatedAt": "2026-03-27T17:28:16.770Z"
+}

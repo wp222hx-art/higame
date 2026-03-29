@@ -1,0 +1,19 @@
+{
+  "id": "custom-93ello",
+  "name": "种植师小妹",
+  "icon": "🌾",
+  "dept": "种植部",
+  "tier": 3,
+  "zone": "village-hall",
+  "color": "#00e676",
+  "skills": [
+    "crop-plan"
+  ],
+  "description": "",
+  "sprite": "custom-93ello",
+  "scale": 0.5,
+  "frameSize": 298,
+  "frameHeight": 300,
+  "spriteUrl": "/game/assets/sprites/custom/char-custom-93ello.png",
+  "createdAt": "2026-03-27T16:05:32.585Z"
+}
